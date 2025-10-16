@@ -17,6 +17,11 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserDashboard from './pages/user/UserDashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
+// Booking Components
+import ShowSelection from './components/booking/ShowSelection';
+import SeatSelection from './components/booking/SeatSelection';
+import BookingConfirmation from './components/booking/BookingConfirmation';
+
 const Events = () => (
   <div className="container mx-auto px-4 py-8">
     <h1 className="text-3xl font-bold text-gray-900 mb-6">Events</h1>
@@ -56,7 +61,7 @@ const Profile = () => (
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="min-h-screen flex flex-col bg-gray-50">
           <Navbar />
           
@@ -70,6 +75,23 @@ function App() {
               <Route path="/sports" element={<Sports />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              
+              {/* Booking Flow Routes */}
+              <Route path="/movies/:id/shows" element={
+                <ProtectedRoute>
+                  <ShowSelection />
+                </ProtectedRoute>
+              } />
+              <Route path="/booking/seats/:showId" element={
+                <ProtectedRoute>
+                  <SeatSelection />
+                </ProtectedRoute>
+              } />
+              <Route path="/booking/confirm" element={
+                <ProtectedRoute>
+                  <BookingConfirmation />
+                </ProtectedRoute>
+              } />
               
               {/* Protected Routes */}
               <Route path="/admin/dashboard" element={

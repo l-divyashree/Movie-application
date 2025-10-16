@@ -56,17 +56,27 @@ public class WebSecurityConfig {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())) // For H2 console
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Public endpoints - order matters, most specific first
-                .requestMatchers("/public/**").permitAll()
+                // Public endpoints - allow all authentication routes (note: context path /api is handled by servlet container)
                 .requestMatchers("/auth/**").permitAll()
+                .requestMatchers("/public/**").permitAll() 
                 .requestMatchers("/setup/**").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/test/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/error").permitAll()
+                // Public read access for browsing (note: context path /api is handled by servlet container)
+                .requestMatchers(HttpMethod.GET, "/api/shows/**", "/shows/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/venues/**", "/venues/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/seats/**", "/seats/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/movies/**", "/movies/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/cities/**", "/cities/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/bookings/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/bookings/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/seats/block").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/seats/unblock").authenticated()
                 // All other requests need authentication
                 .anyRequest().authenticated()
             );
@@ -80,7 +90,7 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);

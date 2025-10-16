@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Browser Cache</title>
+</head>
+<body>
+    <h1>Clear Browser Cache</h1>
+    <button onclick="clearCache()">Clear All Data</button>
+    <div id="status"></div>
+
+    <script>
+        function clearCache() {
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            // Clear cookies (domain-specific)
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // Show status
+            document.getElementById('status').innerHTML = '<p style="color: green;">Cache cleared! Please reload the registration page.</p>';
+            
+            // Optionally redirect back
+            setTimeout(() => {
+                window.location.href = '/register';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

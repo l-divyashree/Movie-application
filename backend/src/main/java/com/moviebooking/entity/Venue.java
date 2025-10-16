@@ -40,6 +40,16 @@ public class Venue extends BaseEntity {
     @Column(name = "phone_number", length = 20)
     private String phoneNumber;
 
+    @Size(max = 100)
+    @Column(length = 100)
+    private String email;
+
+    @Column(name = "total_screens")
+    private Integer totalScreens;
+
+    @Column(name = "total_seats")
+    private Integer totalSeats;
+
     @Column(columnDefinition = "JSON")
     private String facilities; // JSON array of facilities like ["Parking", "Food Court"]
 

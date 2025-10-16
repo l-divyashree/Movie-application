@@ -44,4 +44,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.bookingStatus = 'RESERVED' AND " +
            "b.bookingDate < :expiryTime")
     List<Booking> findExpiredReservations(@Param("expiryTime") LocalDateTime expiryTime);
+    
+    @Query("SELECT SUM(b.totalAmount) FROM Booking b WHERE " +
+           "b.bookingStatus = 'CONFIRMED' AND b.paymentStatus = 'COMPLETED'")
+    Optional<java.math.BigDecimal> getTotalRevenue();
 }

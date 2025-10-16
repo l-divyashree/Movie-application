@@ -1,86 +1,80 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline';
 import movieService from '../../services/movieService';
+import adminService from '../../services/adminService';
 
 const AdminMovieManagement = () => {
-  const { user, token } = useAuth();
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
-  const [stats, setStats] = useState({ total: 0, upcoming: 0 });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     genre: '',
     language: '',
-    duration: '',
+    durationMinutes: '',
     rating: '',
     releaseDate: '',
     director: '',
     cast: '',
     posterUrl: '',
     trailerUrl: '',
-    nowShowing: false,
-    comingSoon: false
+    isNowShowing: false,
+    isComingSoon: false,
+    isActive: true
   });
 
-  const fetchMovies = useCallback(async () => {
+  const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Romance', 'Sci-Fi', 'Thriller', 'Adventure', 'Animation'];
+  const languages = ['English', 'Hindi', 'Tamil', 'Telugu', 'Malayalam', 'Kannada', 'Bengali'];
+  const ratings = ['U', 'UA', 'A', 'PG', 'PG-13', 'R'];
+
+  useEffect(() => {
+    loadMovies();
+  }, []);
+
+  const loadMovies = async () => {
     try {
       setLoading(true);
-      // Use public endpoint for listing, but we'll show admin actions
       const response = await movieService.getMovies({});
       setMovies(response.content || []);
     } catch (err) {
-      setError('Failed to fetch movies');
-      console.error('Error fetching movies:', err);
+      setError('Failed to load movies: ' + err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const totalStats = await movieService.getMovieStats(token);
-      setStats({ total: totalStats, upcoming: 0 });
-    } catch (err) {
-      console.error('Error fetching stats:', err);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (user && user.roles?.includes('ADMIN')) {
-      fetchMovies();
-      // fetchStats();
-    }
-  }, [user, token, fetchMovies]);
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const movieData = {
         ...formData,
-        duration: parseInt(formData.duration) || 0,
-        rating: parseFloat(formData.rating) || 0,
-        releaseDate: formData.releaseDate || null
+        durationMinutes: parseInt(formData.durationMinutes) || 0
       };
 
       if (editingMovie) {
-        await movieService.updateMovie(editingMovie.id, movieData, token);
+        await adminService.updateMovie(editingMovie.id, movieData);
       } else {
-        await movieService.createMovie(movieData, token);
+        await adminService.createMovie(movieData);
       }
-
-      setShowForm(false);
-      setEditingMovie(null);
+      
       resetForm();
-      fetchMovies();
-      fetchStats();
+      loadMovies();
     } catch (err) {
-      setError(editingMovie ? 'Failed to update movie' : 'Failed to create movie');
-      console.error('Error saving movie:', err);
+      setError(err.message);
     }
   };
 
@@ -91,28 +85,27 @@ const AdminMovieManagement = () => {
       description: movie.description || '',
       genre: movie.genre || '',
       language: movie.language || '',
-      duration: movie.duration?.toString() || '',
-      rating: movie.rating?.toString() || '',
-      releaseDate: movie.releaseDate ? movie.releaseDate.split('T')[0] : '',
+      durationMinutes: movie.durationMinutes?.toString() || '',
+      rating: movie.rating || '',
+      releaseDate: movie.releaseDate || '',
       director: movie.director || '',
       cast: movie.cast || '',
       posterUrl: movie.posterUrl || '',
       trailerUrl: movie.trailerUrl || '',
-      nowShowing: movie.nowShowing || false,
-      comingSoon: movie.comingSoon || false
+      isNowShowing: movie.isNowShowing || false,
+      isComingSoon: movie.isComingSoon || false,
+      isActive: movie.isActive !== undefined ? movie.isActive : true
     });
     setShowForm(true);
   };
 
-  const handleDelete = async (movieId) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this movie?')) {
       try {
-        await movieService.deleteMovie(movieId, token);
-        fetchMovies();
-        fetchStats();
+        await adminService.deleteMovie(id);
+        loadMovies();
       } catch (err) {
-        setError('Failed to delete movie');
-        console.error('Error deleting movie:', err);
+        setError(err.message);
       }
     }
   };
@@ -123,29 +116,40 @@ const AdminMovieManagement = () => {
       description: '',
       genre: '',
       language: '',
-      duration: '',
+      durationMinutes: '',
       rating: '',
       releaseDate: '',
       director: '',
       cast: '',
       posterUrl: '',
       trailerUrl: '',
-      nowShowing: false,
-      comingSoon: false
+      isNowShowing: false,
+      isComingSoon: false,
+      isActive: true
     });
-  };
-
-  const handleCancel = () => {
-    setShowForm(false);
     setEditingMovie(null);
-    resetForm();
+    setShowForm(false);
+    setError(null);
   };
 
-  if (!user || !user.roles?.includes('ADMIN')) {
+  const filteredMovies = movies.filter(movie => {
+    const matchesSearch = movie.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         movie.director?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesGenre = !selectedGenre || movie.genre === selectedGenre;
+    return matchesSearch && matchesGenre;
+  });
+
+  const formatDuration = (minutes) => {
+    if (!minutes) return 'Not set';
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  if (loading) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-        <p className="text-gray-600">You need admin privileges to access this page.</p>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -156,365 +160,398 @@ const AdminMovieManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Movie Management</h2>
-          <p className="text-gray-600">Manage your movie collection</p>
+          <p className="text-gray-600 mt-1">Manage movie catalog with full CRUD operations</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
         >
-          Add New Movie
+          <PlusIcon className="h-5 w-5" />
+          <span>Add New Movie</span>
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2h4a1 1 0 011 1v1a1 1 0 01-1 1h-1v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7H3a1 1 0 01-1-1V5a1 1 0 011-1h4z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Movies</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-green-100 text-green-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Now Showing</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {movies.filter(m => m.nowShowing).length}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Coming Soon</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {movies.filter(m => m.comingSoon).length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <p className="text-red-800">{error}</p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-2 text-red-600 hover:text-red-800 text-sm"
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+          {error}
+          <button 
+            onClick={() => setError(null)} 
+            className="ml-2 text-red-800 hover:text-red-900"
           >
-            Dismiss
+            ×
           </button>
         </div>
       )}
 
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow-sm border">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by title or director..."
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Genre</label>
+            <select
+              value={selectedGenre}
+              onChange={(e) => setSelectedGenre(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+            >
+              <option value="">All Genres</option>
+              {genres.map(genre => (
+                <option key={genre} value={genre}>{genre}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => { setSearchTerm(''); setSelectedGenre(''); }}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Movie Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-10 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-lg font-bold mb-4">
                 {editingMovie ? 'Edit Movie' : 'Add New Movie'}
               </h3>
-              <button
-                onClick={handleCancel}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Title *
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Director *
+                    </label>
+                    <input
+                      type="text"
+                      name="director"
+                      value={formData.director}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Genre *
+                    </label>
+                    <select
+                      name="genre"
+                      value={formData.genre}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    >
+                      <option value="">Select Genre</option>
+                      {genres.map(genre => (
+                        <option key={genre} value={genre}>{genre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Language *
+                    </label>
+                    <select
+                      name="language"
+                      value={formData.language}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    >
+                      <option value="">Select Language</option>
+                      {languages.map(language => (
+                        <option key={language} value={language}>{language}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Rating
+                    </label>
+                    <select
+                      name="rating"
+                      value={formData.rating}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    >
+                      <option value="">Select Rating</option>
+                      {ratings.map(rating => (
+                        <option key={rating} value={rating}>{rating}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Duration (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      name="durationMinutes"
+                      value={formData.durationMinutes}
+                      onChange={handleInputChange}
+                      min="1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Release Date
+                    </label>
+                    <input
+                      type="date"
+                      name="releaseDate"
+                      value={formData.releaseDate}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cast
+                  </label>
+                  <input
+                    type="text"
+                    name="cast"
+                    value={formData.cast}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Actor 1, Actor 2, Actor 3"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Poster URL
+                    </label>
+                    <input
+                      type="url"
+                      name="posterUrl"
+                      value={formData.posterUrl}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Trailer URL
+                    </label>
+                    <input
+                      type="url"
+                      name="trailerUrl"
+                      value={formData.trailerUrl}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isNowShowing"
+                      checked={formData.isNowShowing}
+                      onChange={handleInputChange}
+                      className="mr-2"
+                    />
+                    <label className="text-sm text-gray-700">Now Showing</label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isComingSoon"
+                      checked={formData.isComingSoon}
+                      onChange={handleInputChange}
+                      className="mr-2"
+                    />
+                    <label className="text-sm text-gray-700">Coming Soon</label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
+                      onChange={handleInputChange}
+                      className="mr-2"
+                    />
+                    <label className="text-sm text-gray-700">Active</label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    {editingMovie ? 'Update Movie' : 'Create Movie'}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Title */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  rows={3}
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Genre */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Genre</label>
-                <input
-                  type="text"
-                  value={formData.genre}
-                  onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-                  placeholder="Action, Drama, Comedy"
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Language */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Language</label>
-                <input
-                  type="text"
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Duration & Rating */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Duration (minutes)</label>
-                <input
-                  type="number"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Rating (1-10)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="1"
-                  max="10"
-                  value={formData.rating}
-                  onChange={(e) => setFormData({ ...formData, rating: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Release Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Release Date</label>
-                <input
-                  type="date"
-                  value={formData.releaseDate}
-                  onChange={(e) => setFormData({ ...formData, releaseDate: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Director */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Director</label>
-                <input
-                  type="text"
-                  value={formData.director}
-                  onChange={(e) => setFormData({ ...formData, director: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Cast */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700">Cast</label>
-                <input
-                  type="text"
-                  value={formData.cast}
-                  onChange={(e) => setFormData({ ...formData, cast: e.target.value })}
-                  placeholder="Actor 1, Actor 2, Actor 3"
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* URLs */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Poster URL</label>
-                <input
-                  type="url"
-                  value={formData.posterUrl}
-                  onChange={(e) => setFormData({ ...formData, posterUrl: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Trailer URL</label>
-                <input
-                  type="url"
-                  value={formData.trailerUrl}
-                  onChange={(e) => setFormData({ ...formData, trailerUrl: e.target.value })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              {/* Status Checkboxes */}
-              <div className="md:col-span-2 flex gap-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.nowShowing}
-                    onChange={(e) => setFormData({ ...formData, nowShowing: e.target.checked })}
-                    className="mr-2"
-                  />
-                  Now Showing
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.comingSoon}
-                    onChange={(e) => setFormData({ ...formData, comingSoon: e.target.checked })}
-                    className="mr-2"
-                  />
-                  Coming Soon
-                </label>
-              </div>
-
-              {/* Form Actions */}
-              <div className="md:col-span-2 flex justify-end gap-4 mt-6">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  {editingMovie ? 'Update Movie' : 'Create Movie'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
 
       {/* Movies List */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">All Movies</h3>
-        </div>
-        
-        {loading ? (
-          <div className="p-6">
-            <div className="animate-pulse space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 bg-gray-200 rounded"></div>
-              ))}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filteredMovies.map((movie) => (
+          <div key={movie.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+            <div className="relative">
+              <img
+                src={movie.posterUrl || '/api/placeholder/400/300'}
+                alt={movie.title}
+                className="w-full h-48 object-cover"
+                onError={(e) => {
+                  e.target.src = '/api/placeholder/400/300';
+                }}
+              />
+              <div className="absolute top-2 right-2 flex space-x-1">
+                <button
+                  onClick={() => handleEdit(movie)}
+                  className="bg-blue-600 text-white p-1 rounded hover:bg-blue-700"
+                  title="Edit"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleDelete(movie.id)}
+                  className="bg-red-600 text-white p-1 rounded hover:bg-red-700"
+                  title="Delete"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 truncate">
+                {movie.title}
+              </h3>
+              
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                {movie.description || 'No description available'}
+              </p>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Director:</span>
+                  <span className="font-medium">{movie.director || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Genre:</span>
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    {movie.genre}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Language:</span>
+                  <span>{movie.language}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Duration:</span>
+                  <span className="flex items-center">
+                    <ClockIcon className="h-4 w-4 mr-1" />
+                    {formatDuration(movie.durationMinutes)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Release:</span>
+                  <span className="flex items-center">
+                    <CalendarIcon className="h-4 w-4 mr-1" />
+                    {movie.releaseDate || 'Not set'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center mt-4">
+                <div className="flex space-x-1">
+                  {movie.isNowShowing && (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                      Now Showing
+                    </span>
+                  )}
+                  {movie.isComingSoon && (
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                      Coming Soon
+                    </span>
+                  )}
+                </div>
+                <span className={`px-2 py-1 text-xs rounded ${movie.isActive 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'}`}>
+                  {movie.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
             </div>
           </div>
-        ) : movies.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Movie
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Genre
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rating
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {movies.map((movie) => (
-                  <tr key={movie.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <img
-                            className="h-12 w-12 rounded object-cover"
-                            src={movie.posterUrl || '/api/placeholder/100/150'}
-                            alt={movie.title}
-                          />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{movie.title}</div>
-                          <div className="text-sm text-gray-500">{movie.language}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {movie.genre}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex gap-2">
-                        {movie.nowShowing && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Now Showing
-                          </span>
-                        )}
-                        {movie.comingSoon && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Coming Soon
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {movie.rating ? `${movie.rating}/10` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleEdit(movie)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(movie.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-6 text-center">
-            <p className="text-gray-500">No movies found. Add your first movie!</p>
-          </div>
-        )}
+        ))}
       </div>
+
+      {filteredMovies.length === 0 && !loading && (
+        <div className="text-center py-8">
+          <EyeIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No movies found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {searchTerm || selectedGenre ? 'Try adjusting your filters.' : 'Get started by adding your first movie.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

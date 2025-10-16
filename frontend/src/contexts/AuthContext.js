@@ -77,7 +77,11 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const url = `${API_BASE_URL}/auth/signup`;
+      console.log('Attempting registration to:', url);
+      console.log('Registration data:', userData);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -85,12 +89,25 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorText = await response.text();
+        console.error('Registration failed with status:', response.status);
+        console.error('Error response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { message: errorText || 'Registration failed' };
+        }
         throw new Error(errorData.message || 'Registration failed');
       }
 
       const data = await response.json();
+      console.log('Registration successful:', data);
       return { success: true, message: data.message };
     } catch (error) {
       console.error('Registration error:', error);

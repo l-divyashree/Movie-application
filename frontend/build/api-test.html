@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 10px; }
+        input { margin: 5px 0; padding: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Movie Booking API Test</h1>
+        
+        <h3>Test Registration</h3>
+        <div>
+            <input type="text" id="fullName" placeholder="Full Name" value="Test User API">
+            <input type="email" id="email" placeholder="Email" value="apitest@test.com">
+            <input type="password" id="password" placeholder="Password" value="test123">
+            <button onclick="testRegister()">Test Register</button>
+        </div>
+        
+        <h3>Test Login</h3>
+        <div>
+            <input type="email" id="loginEmail" placeholder="Email" value="admin@moviebook.com">
+            <input type="password" id="loginPassword" placeholder="Password" value="password123">
+            <button onclick="testLogin()">Test Login</button>
+        </div>
+        
+        <h3>Test Public Movies</h3>
+        <button onclick="testMovies()">Test Get Movies</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8080/api';
+        
+        function addResult(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'test-result ' + (isError ? 'error' : 'success');
+            div.innerHTML = message;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        async function testRegister() {
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                console.log('Testing registration...');
+                const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fullName: fullName,
+                        email: email,
+                        password: password
+                    }),
+                });
+                
+                console.log('Response status:', response.status);
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Registration Success: ${data}`);
+                } else {
+                    addResult(`❌ Registration Failed (${response.status}): ${data}`, true);
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                addResult(`❌ Registration Error: ${error.message}`, true);
+            }
+        }
+        
+        async function testLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                console.log('Testing login...');
+                const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    }),
+                });
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Login Success: ${data.substring(0, 100)}...`);
+                } else {
+                    addResult(`❌ Login Failed (${response.status}): ${data}`, true);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                addResult(`❌ Login Error: ${error.message}`, true);
+            }
+        }
+        
+        async function testMovies() {
+            try {
+                console.log('Testing movies...');
+                const response = await fetch(`${API_BASE_URL}/public/movies`);
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    const movies = JSON.parse(data);
+                    addResult(`✅ Movies Success: Found ${movies.content.length} movies`);
+                } else {
+                    addResult(`❌ Movies Failed (${response.status}): ${data}`, true);
+                }
+            } catch (error) {
+                console.error('Movies error:', error);
+                addResult(`❌ Movies Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

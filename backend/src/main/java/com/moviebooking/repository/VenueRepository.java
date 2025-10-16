@@ -13,9 +13,13 @@ import java.util.List;
 @Repository
 public interface VenueRepository extends JpaRepository<Venue, Long> {
     
+    List<Venue> findByIsActiveTrue();
+    
     Page<Venue> findByIsActiveTrueOrderByName(Pageable pageable);
     
     List<Venue> findByCityIdAndIsActiveTrueOrderByName(Long cityId);
+    
+    List<Venue> findByCityIdAndIsActiveTrue(Long cityId);
     
     @Query("SELECT v FROM Venue v WHERE v.isActive = true AND " +
            "(LOWER(v.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
@@ -30,4 +34,14 @@ public interface VenueRepository extends JpaRepository<Venue, Long> {
                                        Pageable pageable);
     
     Boolean existsByNameIgnoreCaseAndCityId(String name, Long cityId);
+    
+    // Methods to avoid lazy loading issues
+    @Query("SELECT v FROM Venue v JOIN FETCH v.city WHERE v.isActive = true ORDER BY v.name")
+    List<Venue> findAllWithCity();
+    
+    @Query("SELECT v FROM Venue v JOIN FETCH v.city WHERE v.city.id = :cityId AND v.isActive = true ORDER BY v.name")
+    List<Venue> findByCityIdWithCity(@Param("cityId") Long cityId);
+    
+    @Query("SELECT v FROM Venue v JOIN FETCH v.city WHERE v.isActive = true AND LOWER(v.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY v.name")
+    List<Venue> findByNameContainingIgnoreCaseWithCity(@Param("name") String name);
 }

@@ -16,7 +16,7 @@ class MovieService {
     if (filters.sortBy) params.append('sortBy', filters.sortBy);
     if (filters.sortDirection) params.append('sortDirection', filters.sortDirection);
 
-    const response = await fetch(`${API_BASE_URL}/public/movies?${params}`);
+    const response = await fetch(`${API_BASE_URL}/movies?${params}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch movies: ${response.statusText}`);
     }
@@ -24,7 +24,7 @@ class MovieService {
   }
 
   async getMovieById(id) {
-    const response = await fetch(`${API_BASE_URL}/public/movies/${id}`);
+    const response = await fetch(`${API_BASE_URL}/movies/${id}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch movie: ${response.statusText}`);
     }
@@ -32,7 +32,7 @@ class MovieService {
   }
 
   async getGenres() {
-    const response = await fetch(`${API_BASE_URL}/public/movies/genres`);
+    const response = await fetch(`${API_BASE_URL}/movies/genres`);
     if (!response.ok) {
       throw new Error(`Failed to fetch genres: ${response.statusText}`);
     }
@@ -40,7 +40,7 @@ class MovieService {
   }
 
   async getLanguages() {
-    const response = await fetch(`${API_BASE_URL}/public/movies/languages`);
+    const response = await fetch(`${API_BASE_URL}/movies/languages`);
     if (!response.ok) {
       throw new Error(`Failed to fetch languages: ${response.statusText}`);
     }

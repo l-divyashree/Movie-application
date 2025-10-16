@@ -1,45 +1,104 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { 
+  CalendarIcon, 
+  TicketIcon, 
+  FilmIcon,
+  ClockIcon,
+  MapPinIcon,
+  CurrencyRupeeIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  UserIcon
+} from '@heroicons/react/24/outline';
+import bookingService from '../../services/bookingService';
 
 const UserDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [userStats, setUserStats] = useState({
     totalBookings: 0,
     upcomingShows: 0,
+    completedBookings: 0,
+    totalSpent: 0,
     favoriteGenres: [],
     recentBookings: []
   });
 
   useEffect(() => {
-    // Load user statistics (mock data for now)
-    setUserStats({
-      totalBookings: 8,
-      upcomingShows: 3,
-      favoriteGenres: ['Action', 'Comedy', 'Drama'],
-      recentBookings: [
+    loadUserBookings();
+  }, []);
+
+  const loadUserBookings = async () => {
+    try {
+      setLoading(true);
+      const bookingsData = await bookingService.getUserBookings();
+      
+      // Ensure bookingsData is an array
+      const validBookings = Array.isArray(bookingsData) ? bookingsData : [];
+      setBookings(validBookings);
+      
+      // Calculate stats
+      const now = new Date();
+      const upcoming = validBookings.filter(booking => {
+        const showDate = new Date(booking?.show?.showDate);
+        return showDate >= now && booking?.status === 'CONFIRMED';
+      }).length;
+      
+      const completed = validBookings.filter(booking => {
+        const showDate = new Date(booking?.show?.showDate);
+        return showDate < now || booking?.status === 'COMPLETED';
+      }).length;
+      
+      const totalSpent = validBookings.reduce((sum, booking) => {
+        return sum + (booking?.totalAmount || 0);
+      }, 0);
+      
+      setUserStats({
+        totalBookings: validBookings.length,
+        upcomingShows: upcoming,
+        completedBookings: completed,
+        totalSpent: totalSpent,
+        favoriteGenres: ['Action', 'Drama', 'Comedy'], // Mock data for now
+        recentBookings: validBookings.slice(0, 3) // Show recent 3 bookings
+      });
+      
+    } catch (err) {
+      console.error('Error loading bookings:', err);
+      setError('Failed to load booking history');
+      // Use mock data as fallback
+      const mockBookings = [
         {
           id: 1,
-          movie: 'Spider-Man: No Way Home',
-          venue: 'PVR Cinemas',
-          date: '2025-10-20',
-          time: '7:30 PM',
-          seats: ['F12', 'F13'],
-          status: 'confirmed'
-        },
-        {
-          id: 2,
-          movie: 'Dune: Part Two',
-          venue: 'INOX Multiplex',
-          date: '2025-10-18',
-          time: '3:00 PM',
-          seats: ['H8', 'H9'],
-          status: 'completed'
+          show: {
+            movie: { title: 'Spider-Man: No Way Home', posterUrl: '/placeholder-movie.jpg' },
+            venue: { name: 'PVR Cinemas Forum Mall' },
+            showDate: '2025-10-20',
+            showTime: '19:30'
+          },
+          seats: [{ seatNumber: 'F12' }, { seatNumber: 'F13' }],
+          totalAmount: 500,
+          status: 'CONFIRMED',
+          createdAt: '2025-10-15T10:00:00Z'
         }
-      ]
-    });
-  }, []);
+      ];
+      setBookings(mockBookings);
+      setUserStats({ 
+        totalBookings: 1, 
+        upcomingShows: 1, 
+        completedBookings: 0, 
+        totalSpent: 500,
+        favoriteGenres: ['Action', 'Drama'],
+        recentBookings: mockBookings
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const QuickAction = ({ title, description, action, icon, color }) => (
     <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer" onClick={action}>
@@ -58,8 +117,11 @@ const UserDashboard = () => {
     </div>
   );
 
-  const StatCard = ({ title, value, icon, color }) => (
-    <div className="bg-white rounded-lg shadow-md p-6">
+  const StatCard = ({ title, value, icon, color, onClick }) => (
+    <div 
+      className={`bg-white rounded-lg shadow-sm p-6 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -68,6 +130,26 @@ const UserDashboard = () => {
         <div className={`p-3 rounded-full ${color}`}>
           {icon}
         </div>
+      </div>
+    </div>
+  );
+
+  const QuickActionCard = ({ title, description, onClick, icon, color }) => (
+    <div 
+      className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-100 hover:border-blue-200"
+      onClick={onClick}
+    >
+      <div className="flex items-start space-x-4">
+        <div className={`p-3 rounded-full ${color}`}>
+          {icon}
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <p className="text-gray-600 text-sm mt-1">{description}</p>
+        </div>
+        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
       </div>
     </div>
   );
@@ -97,48 +179,44 @@ const UserDashboard = () => {
     </div>
   );
 
-  const handleQuickAction = (action) => {
-    switch(action) {
-      case 'Browse Movies':
-        navigate('/movies');
-        break;
-      case 'View Bookings':
-        navigate('/my-bookings');
-        break;
-      case 'Profile':
-        navigate('/profile');
-        break;
-      case 'Events':
-        navigate('/events');
-        break;
-      case 'Sports':
-        navigate('/sports');
-        break;
-      default:
-        alert(`${action} feature coming soon!`);
-    }
-  };
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Debug log
+  console.log('UserStats:', userStats);
+  console.log('Bookings:', bookings);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.username}!</p>
+              <h1 className="text-3xl font-bold text-gray-900">My Dashboard</h1>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.email || 'User'}!</p>
             </div>
-            <div className="flex space-x-4">
+            <div className="flex space-x-3">
               <button
                 onClick={() => navigate('/profile')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
+                <UserIcon className="h-4 w-4 mr-2" />
                 Profile
               </button>
               <button
                 onClick={logout}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Logout
               </button>
@@ -147,92 +225,66 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {error && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-700">{error} - Showing sample data</p>
+          </div>
+        )}
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Bookings"
-            value={userStats.totalBookings}
-            icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>}
+            value={userStats?.totalBookings || 0}
+            icon={<TicketIcon className="h-6 w-6 text-white" />}
             color="bg-blue-500"
+            onClick={() => navigate('/my-bookings')}
           />
           <StatCard
             title="Upcoming Shows"
-            value={userStats.upcomingShows}
-            icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>}
+            value={userStats?.upcomingShows || 0}
+            icon={<CalendarIcon className="h-6 w-6 text-white" />}
             color="bg-green-500"
+            onClick={() => navigate('/my-bookings')}
           />
           <StatCard
-            title="Favorite Genres"
-            value={userStats.favoriteGenres.length}
-            icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>}
-            color="bg-red-500"
+            title="Completed"
+            value={userStats?.completedBookings || 0}
+            icon={<CheckCircleIcon className="h-6 w-6 text-white" />}
+            color="bg-purple-500"
+          />
+          <StatCard
+            title="Total Spent"
+            value={`₹${userStats?.totalSpent || 0}`}
+            icon={<CurrencyRupeeIcon className="h-6 w-6 text-white" />}
+            color="bg-indigo-500"
           />
         </div>
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <QuickAction
+            <QuickActionCard
               title="Browse Movies"
-              description="Discover new movies and book tickets"
-              action={() => handleQuickAction('Browse Movies')}
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 11V9a1 1 0 011-1h8a1 1 0 011 1v6M7 15l4-4 4 4" />
-              </svg>}
+              description="Discover new movies and book tickets for latest shows"
+              onClick={() => navigate('/movies')}
+              icon={<FilmIcon className="h-6 w-6 text-white" />}
               color="bg-blue-500"
             />
-            <QuickAction
+            <QuickActionCard
               title="My Bookings"
-              description="View and manage your bookings"
-              action={() => handleQuickAction('View Bookings')}
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>}
+              description="View and manage all your movie bookings"
+              onClick={() => navigate('/my-bookings')}
+              icon={<TicketIcon className="h-6 w-6 text-white" />}
               color="bg-green-500"
             />
-            <QuickAction
+            <QuickActionCard
               title="Events & Sports"
-              description="Book tickets for live events"
-              action={() => handleQuickAction('Events')}
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
-              </svg>}
+              description="Book tickets for live events and sports matches"
+              onClick={() => navigate('/events')}
+              icon={<CalendarIcon className="h-6 w-6 text-white" />}
               color="bg-purple-500"
-            />
-            <QuickAction
-              title="My Profile"
-              description="Update your personal information"
-              action={() => handleQuickAction('Profile')}
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>}
-              color="bg-indigo-500"
-            />
-            <QuickAction
-              title="Favorites"
-              description="Manage your favorite movies and genres"
-              action={() => handleQuickAction('Favorites')}
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>}
-              color="bg-red-500"
-            />
-            <QuickAction
-              title="Notifications"
-              description="View your notifications and updates"
-              action={() => handleQuickAction('Notifications')}
-              icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM4.868 17.868l6.364-6.364M20.132 17.868l-6.364-6.364M12 3v9M3 12h18" />
-              </svg>}
-              color="bg-yellow-500"
             />
           </div>
         </div>
@@ -249,7 +301,7 @@ const UserDashboard = () => {
             </button>
           </div>
           <div className="space-y-4">
-            {userStats.recentBookings.map(booking => (
+            {bookings.slice(0, 3).map(booking => (
               <BookingCard key={booking.id} booking={booking} />
             ))}
           </div>

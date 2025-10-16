@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import AdminMovieManagement from '../../components/admin/AdminMovieManagement';
+import AdminShowManagement from '../../components/admin/AdminShowManagement';
+import AdminUserManagement from '../../components/admin/AdminUserManagement';
+import AdminVenueManagement from '../../components/admin/AdminVenueManagement';
+import AdminSeatManagement from '../../components/admin/AdminSeatManagement';
+import adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
   const { user, isAdmin, logout } = useAuth();
@@ -21,14 +26,24 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Load admin statistics (mock data for now)
-    setStats({
-      totalUsers: 1250,
-      totalMovies: 45,
-      totalBookings: 3420,
-      totalRevenue: 156780
-    });
+    // Load real admin statistics
+    loadDashboardStats();
   }, [isAdmin, navigate]);
+
+  const loadDashboardStats = async () => {
+    try {
+      const data = await adminService.getDashboardStats();
+      setStats({
+        totalUsers: data.totalUsers || 0,
+        totalMovies: data.totalMovies || 0,
+        totalBookings: data.totalBookings || 0,
+        totalRevenue: data.totalRevenue || 0
+      });
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
+      // Keep default values on error
+    }
+  };
 
   const StatCard = ({ title, value, icon, color }) => (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -61,10 +76,7 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const handleQuickAction = (action) => {
-    // For now, just show an alert
-    alert(`${action} feature coming soon!`);
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -117,7 +129,17 @@ const AdminDashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
               >
-                Movie Management
+                Movies
+              </button>
+              <button
+                onClick={() => setActiveTab('shows')}
+                className={`${
+                  activeTab === 'shows'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
+              >
+                Shows
               </button>
               <button
                 onClick={() => setActiveTab('users')}
@@ -127,7 +149,27 @@ const AdminDashboard = () => {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
               >
-                User Management
+                Users
+              </button>
+              <button
+                onClick={() => setActiveTab('venues')}
+                className={`${
+                  activeTab === 'venues'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
+              >
+                Venues
+              </button>
+              <button
+                onClick={() => setActiveTab('seats')}
+                className={`${
+                  activeTab === 'seats'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm`}
+              >
+                Seats
               </button>
               <button
                 onClick={() => setActiveTab('analytics')}
@@ -189,53 +231,52 @@ const AdminDashboard = () => {
             <QuickAction
               title="Manage Users"
               description="View, edit, and manage user accounts"
-              action={() => handleQuickAction('User Management')}
+              action={() => setActiveTab('users')}
               icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>}
               color="bg-blue-500"
             />
             <QuickAction
-              title="Add Movie"
-              description="Add new movies to the catalog"
-              action={() => handleQuickAction('Add Movie')}
+              title="Manage Movies"
+              description="Add and edit movies in the catalog"
+              action={() => setActiveTab('movies')}
               icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 11V9a1 1 0 011-1h8a1 1 0 011 1v6M7 15l4-4 4 4" />
               </svg>}
               color="bg-green-500"
             />
             <QuickAction
-              title="View Reports"
-              description="Generate and view system reports"
-              action={() => handleQuickAction('Reports')}
+              title="Manage Shows"
+              description="Schedule and manage movie shows"
+              action={() => setActiveTab('shows')}
               icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>}
               color="bg-purple-500"
             />
             <QuickAction
               title="Manage Venues"
               description="Add and manage cinema venues"
-              action={() => handleQuickAction('Venue Management')}
+              action={() => setActiveTab('venues')}
               icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>}
               color="bg-red-500"
             />
             <QuickAction
-              title="System Settings"
-              description="Configure application settings"
-              action={() => handleQuickAction('System Settings')}
+              title="Manage Seats"
+              description="Configure theater seating layouts"
+              action={() => setActiveTab('seats')}
               icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>}
               color="bg-gray-500"
             />
             <QuickAction
-              title="Booking Analytics"
-              description="View booking trends and analytics"
-              action={() => handleQuickAction('Booking Analytics')}
+              title="Analytics & Settings"
+              description="View analytics and system settings"
+              action={() => setActiveTab('analytics')}
               icon={<svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>}
@@ -291,19 +332,132 @@ const AdminDashboard = () => {
           <AdminMovieManagement />
         )}
 
+        {/* Show Management Tab */}
+        {activeTab === 'shows' && (
+          <AdminShowManagement />
+        )}
+
         {/* User Management Tab */}
         {activeTab === 'users' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">User Management</h3>
-            <p className="text-gray-600">User management features coming soon...</p>
-          </div>
+          <AdminUserManagement />
+        )}
+
+        {/* Venue Management Tab */}
+        {activeTab === 'venues' && (
+          <AdminVenueManagement />
+        )}
+
+        {/* Seat Management Tab */}
+        {activeTab === 'seats' && (
+          <AdminSeatManagement />
         )}
 
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Analytics</h3>
-            <p className="text-gray-600">Advanced analytics coming soon...</p>
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Analytics</h3>
+              
+              {/* Quick Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{stats.totalBookings}</div>
+                  <div className="text-sm text-blue-800">Total Bookings</div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">${stats.totalRevenue}</div>
+                  <div className="text-sm text-green-800">Total Revenue</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">{Math.round(stats.totalRevenue / stats.totalBookings) || 0}</div>
+                  <div className="text-sm text-purple-800">Avg. Booking Value</div>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">{stats.totalUsers}</div>
+                  <div className="text-sm text-orange-800">Active Users</div>
+                </div>
+              </div>
+
+              {/* Charts Placeholder */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="text-md font-semibold mb-4">Booking Trends (Last 7 Days)</h4>
+                  <div className="h-32 bg-gray-50 rounded flex items-center justify-center">
+                    <span className="text-gray-500">Chart implementation pending</span>
+                  </div>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="text-md font-semibold mb-4">Popular Movies</h4>
+                  <div className="h-32 bg-gray-50 rounded flex items-center justify-center">
+                    <span className="text-gray-500">Chart implementation pending</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* System Settings */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">System Settings</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Booking Window</h4>
+                    <p className="text-sm text-gray-600">How far in advance users can book tickets</p>
+                  </div>
+                  <select className="border border-gray-300 rounded px-3 py-1">
+                    <option>7 days</option>
+                    <option>14 days</option>
+                    <option>30 days</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Cancellation Policy</h4>
+                    <p className="text-sm text-gray-600">Minimum time before show to allow cancellations</p>
+                  </div>
+                  <select className="border border-gray-300 rounded px-3 py-1">
+                    <option>2 hours</option>
+                    <option>4 hours</option>
+                    <option>24 hours</option>
+                  </select>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Service Fee</h4>
+                    <p className="text-sm text-gray-600">Additional service fee per ticket</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span>$</span>
+                    <input 
+                      type="number" 
+                      defaultValue="2.50" 
+                      className="w-20 border border-gray-300 rounded px-2 py-1"
+                      step="0.25"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Maintenance Mode</h4>
+                    <p className="text-sm text-gray-600">Temporarily disable new bookings</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex justify-end mt-6">
+                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                  Save Settings
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
