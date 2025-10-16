@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+  
+  .input {
+    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md overflow-hidden;
+  }
+  
+  .movie-card {
+    @apply card hover:shadow-lg transition-shadow duration-300 cursor-pointer;
+  }
+  
+  .movie-placeholder {
+    @apply bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center text-gray-600 text-sm font-medium;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .section-padding {
+    @apply py-12 lg:py-16;
+  }
+  
+  .gradient-overlay {
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);
+  }
+}
+
+/* Custom animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading spinner */
+.spinner {
+  @apply inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .container-custom {
+    @apply px-4;
+  }
+}
+
+/* Seat selection styles */
+.seat {
+  @apply w-8 h-8 m-1 rounded-sm border-2 cursor-pointer transition-colors duration-200 flex items-center justify-center text-xs font-medium;
+}
+
+.seat-available {
+  @apply border-green-300 bg-green-50 hover:bg-green-100 text-green-700;
+}
+
+.seat-booked {
+  @apply border-red-300 bg-red-100 text-red-700 cursor-not-allowed;
+}
+
+.seat-selected {
+  @apply border-blue-600 bg-blue-100 text-blue-700;
+}
+
+.seat-premium {
+  @apply border-yellow-400 bg-yellow-50;
+}
+
+.seat-vip {
+  @apply border-purple-400 bg-purple-50;
+}
+
+/* Toast customizations */
+.Toastify__toast {
+  @apply rounded-lg;
+}
+
+.Toastify__toast--success {
+  @apply bg-green-50 text-green-900;
+}
+
+.Toastify__toast--error {
+  @apply bg-red-50 text-red-900;
+}
+
+.Toastify__toast--warning {
+  @apply bg-yellow-50 text-yellow-900;
+}
+
+.Toastify__toast--info {
+  @apply bg-blue-50 text-blue-900;
+}
