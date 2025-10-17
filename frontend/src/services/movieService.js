@@ -9,8 +9,8 @@ class MovieService {
     if (filters.genre) params.append('genre', filters.genre);
     if (filters.language) params.append('language', filters.language);
     if (filters.rating) params.append('rating', filters.rating);
-    if (filters.nowShowing !== undefined) params.append('nowShowing', filters.nowShowing);
-    if (filters.comingSoon !== undefined) params.append('comingSoon', filters.comingSoon);
+    if (filters.nowShowing === true) params.append('nowShowing', 'true');
+    if (filters.comingSoon === true) params.append('comingSoon', 'true');
     if (filters.page !== undefined) params.append('page', filters.page);
     if (filters.size !== undefined) params.append('size', filters.size);
     if (filters.sortBy) params.append('sortBy', filters.sortBy);

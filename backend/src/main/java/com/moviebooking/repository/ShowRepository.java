@@ -94,4 +94,35 @@ public interface ShowRepository extends JpaRepository<Show, Long> {
            "JOIN FETCH v.city " +
            "WHERE s.isActive = true AND s.id = :id")
     Optional<Show> findByIdWithMovieAndVenue(@Param("id") Long id);
+
+    // New methods for booking flow
+    @Query("SELECT s FROM Show s " +
+           "JOIN FETCH s.movie m " +
+           "JOIN FETCH s.venue v " +
+           "WHERE s.isActive = true AND s.movie.id = :movieId " +
+           "ORDER BY s.showDate ASC, s.showTime ASC")
+    List<Show> findByMovieId(@Param("movieId") Long movieId);
+
+    @Query("SELECT s FROM Show s " +
+           "JOIN FETCH s.movie m " +
+           "JOIN FETCH s.venue v " +
+           "WHERE s.isActive = true AND s.movie.id = :movieId AND v.city = :city " +
+           "ORDER BY s.showDate ASC, s.showTime ASC")
+    List<Show> findByMovieIdAndCity(@Param("movieId") Long movieId, @Param("city") String city);
+
+    @Query("SELECT s FROM Show s " +
+           "JOIN FETCH s.movie m " +
+           "JOIN FETCH s.venue v " +
+           "WHERE s.isActive = true AND s.movie.id = :movieId AND s.showDate = :date " +
+           "ORDER BY s.showTime ASC")
+    List<Show> findByMovieIdAndDate(@Param("movieId") Long movieId, @Param("date") LocalDate date);
+
+    @Query("SELECT s FROM Show s " +
+           "JOIN FETCH s.movie m " +
+           "JOIN FETCH s.venue v " +
+           "WHERE s.isActive = true AND s.movie.id = :movieId AND v.city = :city AND s.showDate = :date " +
+           "ORDER BY s.showTime ASC")
+    List<Show> findByMovieIdAndCityAndDate(@Param("movieId") Long movieId, 
+                                          @Param("city") String city, 
+                                          @Param("date") LocalDate date);
 }

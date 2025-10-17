@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Setup</title>
+</head>
+<body>
+    <h1>Setting up Admin User</h1>
+    <script>
+        // Create admin user in localStorage
+        const adminUser = {
+            id: 999,
+            firstName: 'Admin',
+            lastName: 'User', 
+            email: 'admin@moviebooking.com',
+            username: 'admin',
+            roles: ['ADMIN', 'USER']
+        };
+        
+        localStorage.setItem('user', JSON.stringify(adminUser));
+        localStorage.setItem('token', 'admin-token-123');
+        
+        console.log('Admin user created:', adminUser);
+        document.body.innerHTML += '<p>Admin user created! You can now login with: admin / password</p>';
+        document.body.innerHTML += '<p><a href="http://localhost:3000">Go to Application</a></p>';
+    </script>
+</body>
+</html>

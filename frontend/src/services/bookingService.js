@@ -10,43 +10,64 @@ class BookingService {
     };
   }
 
-  // Shows API
-  async getShows(page = 0, size = 10) {
-    const response = await fetch(`${API_BASE_URL}/shows?page=${page}&size=${size}`);
+  // Shows API - Using existing working endpoint temporarily
+  async getShows(movieId, filters = {}) {
+    const queryParams = new URLSearchParams();
+    queryParams.append('movieId', movieId);
+    if (filters.city) queryParams.append('city', filters.city);
+    if (filters.date) queryParams.append('date', filters.date);
+    if (filters.venueId) queryParams.append('venueId', filters.venueId);
+    
+    const url = `${API_BASE_URL}/shows?${queryParams.toString()}`;
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders()
+    });
+    
     if (!response.ok) {
       throw new Error(`Failed to fetch shows: ${response.statusText}`);
     }
     return response.json();
   }
 
-  async getShowsByMovie(movieId, page = 0, size = 10) {
-    const response = await fetch(`${API_BASE_URL}/shows/movie/${movieId}?page=${page}&size=${size}`);
+  async getShowById(showId) {
+    const response = await fetch(`${API_BASE_URL}/shows/${showId}`, {
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) {
-      throw new Error(`Failed to fetch shows for movie: ${response.statusText}`);
+      throw new Error(`Failed to fetch show: ${response.statusText}`);
     }
     return response.json();
   }
 
-  async getShowsByMovieAndCity(movieId, cityId, page = 0, size = 10) {
-    const response = await fetch(`${API_BASE_URL}/shows/movie/${movieId}/city/${cityId}?page=${page}&size=${size}`);
+  // Seat API - Using existing working endpoint temporarily
+  async getSeats(showId) {
+    const response = await fetch(`${API_BASE_URL}/seats/show/${showId}`, {
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) {
-      throw new Error(`Failed to fetch shows: ${response.statusText}`);
+      throw new Error(`Failed to fetch seats: ${response.statusText}`);
     }
     return response.json();
   }
 
-  async getShowsByDateAndCity(date, cityId, page = 0, size = 10) {
-    const response = await fetch(`${API_BASE_URL}/shows/date/${date}/city/${cityId}?page=${page}&size=${size}`);
+  async reserveSeats(seatIds) {
+    const response = await fetch(`${API_BASE_URL}/booking/seats/reserve`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ seatIds })
+    });
     if (!response.ok) {
-      throw new Error(`Failed to fetch shows: ${response.statusText}`);
+      throw new Error(`Failed to reserve seats: ${response.statusText}`);
     }
     return response.json();
   }
 
-  async getShowsByVenue(venueId) {
-    const response = await fetch(`${API_BASE_URL}/shows/venue/${venueId}`);
+  async getBookingSummary(summaryId) {
+    const response = await fetch(`${API_BASE_URL}/booking/summary/${summaryId}`, {
+      headers: this.getAuthHeaders()
+    });
     if (!response.ok) {
-      throw new Error(`Failed to fetch shows for venue: ${response.statusText}`);
+      throw new Error(`Failed to fetch booking summary: ${response.statusText}`);
     }
     return response.json();
   }
@@ -163,4 +184,5 @@ class BookingService {
   }
 }
 
-export default new BookingService();
+const bookingService = new BookingService();
+export default bookingService;

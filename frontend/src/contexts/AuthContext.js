@@ -27,17 +27,33 @@ export const AuthProvider = ({ children }) => {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+        console.log('Restored user session from localStorage');
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
     }
+    
+    // Test backend connectivity
+    fetch(`${API_BASE_URL}/health`)
+      .then(response => {
+        if (response.ok) {
+          console.log('Backend is reachable');
+        } else {
+          console.warn('Backend responded with non-OK status:', response.status);
+        }
+      })
+      .catch(error => {
+        console.error('Backend connectivity test failed:', error);
+      });
+    
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
     try {
+      console.log('Attempting login for:', email);
       const response = await fetch(`${API_BASE_URL}/auth/signin`, {
         method: 'POST',
         headers: {
@@ -46,12 +62,22 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
+      console.log('Login response status:', response.status);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        let errorMessage = 'Login failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || `Server error: ${response.status}`;
+        } catch (jsonError) {
+          console.error('Error parsing error response:', jsonError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('Login successful for user:', data.username);
       
       // Create user object from JWT response
       const user = {
@@ -71,6 +97,15 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: user };
     } catch (error) {
       console.error('Login error:', error);
+      
+      // Check if it's a network error
+      if (error.message === 'Failed to fetch') {
+        return { 
+          success: false, 
+          error: 'Unable to connect to server. Please check your internet connection and try again.' 
+        };
+      }
+      
       return { success: false, error: error.message };
     }
   };

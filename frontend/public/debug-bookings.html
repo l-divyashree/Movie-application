@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Bookings</title>
+</head>
+<body>
+    <h1>Debug Booking Data</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        function displayDebugInfo() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            const demoBookings = JSON.parse(localStorage.getItem('demoBookings') || '[]');
+            
+            let html = '<h2>Current User:</h2>';
+            html += '<pre>' + JSON.stringify(user, null, 2) + '</pre>';
+            
+            html += '<h2>Demo Bookings in localStorage:</h2>';
+            html += '<pre>' + JSON.stringify(demoBookings, null, 2) + '</pre>';
+            
+            html += '<h2>User ID Match Check:</h2>';
+            const userBookings = demoBookings.filter(booking => booking.userId === user.id);
+            html += '<p>Total bookings: ' + demoBookings.length + '</p>';
+            html += '<p>User bookings: ' + userBookings.length + '</p>';
+            html += '<pre>' + JSON.stringify(userBookings, null, 2) + '</pre>';
+            
+            document.getElementById('debug-info').innerHTML = html;
+        }
+        
+        displayDebugInfo();
+        
+        // Refresh every 2 seconds
+        setInterval(displayDebugInfo, 2000);
+    </script>
+</body>
+</html>

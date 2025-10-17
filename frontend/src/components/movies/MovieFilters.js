@@ -7,8 +7,8 @@ const MovieFilters = ({ onFiltersChange, initialFilters = {} }) => {
     genre: '',
     language: '',
     rating: '',
-    nowShowing: null,
-    comingSoon: null,
+    nowShowing: false,
+    comingSoon: false,
     sortBy: 'createdAt',
     sortDirection: 'desc',
     ...initialFilters
@@ -49,8 +49,8 @@ const MovieFilters = ({ onFiltersChange, initialFilters = {} }) => {
       genre: '',
       language: '',
       rating: '',
-      nowShowing: null,
-      comingSoon: null,
+      nowShowing: false,
+      comingSoon: false,
       sortBy: 'createdAt',
       sortDirection: 'desc'
     };

@@ -1,6 +1,7 @@
 package com.moviebooking.controller;
 
 import com.moviebooking.entity.Seat;
+import com.moviebooking.dto.SeatDTO;
 import com.moviebooking.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/seats")
@@ -22,9 +24,60 @@ public class SeatController {
      * Get all seats for a show - essential for seat selection
      */
     @GetMapping("/show/{showId}")
-    public ResponseEntity<List<Seat>> getSeatsByShowId(@PathVariable Long showId) {
-        List<Seat> seats = seatRepository.findByShowIdOrderBySeatRowAscSeatNumberAsc(showId);
-        return ResponseEntity.ok(seats);
+    public ResponseEntity<List<SeatDTO>> getSeatsByShowId(@PathVariable Long showId) {
+        try {
+            List<Seat> seats = seatRepository.findByShowIdOrderBySeatRowAscSeatNumberAsc(showId);
+            List<SeatDTO> seatDTOs = seats.stream()
+                .map(this::convertToSeatDTO)
+                .collect(Collectors.toList());
+            return ResponseEntity.ok(seatDTOs);
+        } catch (Exception e) {
+            // Log the error for debugging
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private SeatDTO convertToSeatDTO(Seat seat) {
+        return SeatDTO.builder()
+            .id(seat.getId())
+            .seatRow(seat.getSeatRow())
+            .seatNumber(seat.getSeatNumber())
+            .seatType(seat.getSeatType())
+            .price(seat.getPrice())
+            .isAvailable(seat.getIsAvailable())
+            .isBlocked(seat.getIsBlocked())
+            .displayName(seat.getSeatLabel())
+            .build();
+    }
+
+    /**
+     * Debug endpoint to get total seat count
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Long> getTotalSeatCount() {
+        try {
+            long count = seatRepository.count();
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    /**
+     * Debug endpoint to get all seats (limited)
+     */
+    @GetMapping("/all")
+    public ResponseEntity<List<Seat>> getAllSeats() {
+        try {
+            List<Seat> seats = seatRepository.findAll();
+            // Return only first 10 to avoid huge response
+            return ResponseEntity.ok(seats.subList(0, Math.min(10, seats.size())));
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

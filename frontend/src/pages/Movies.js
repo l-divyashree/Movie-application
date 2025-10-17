@@ -19,8 +19,8 @@ const Movies = () => {
     genre: '',
     language: '',
     rating: '',
-    nowShowing: null,
-    comingSoon: null,
+    nowShowing: false,
+    comingSoon: false,
     sortBy: 'createdAt',
     sortDirection: 'desc'
   });
@@ -36,7 +36,9 @@ const Movies = () => {
         size: pagination.size
       };
 
+      console.log('Fetching movies with params:', filterParams);
       const response = await movieService.getMovies(filterParams);
+      console.log('Movies response:', response);
       
       setMovies(response.content || []);
       setPagination({
@@ -51,11 +53,11 @@ const Movies = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.page, pagination.size]);
+  }, []); // Remove dependencies to prevent infinite re-renders
 
   useEffect(() => {
-    fetchMovies();
-  }, []);
+    fetchMovies(filters, pagination.page);
+  }, []); // Only run once on component mount
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
@@ -190,9 +192,9 @@ const Movies = () => {
                   sortBy: 'createdAt',
                   sortDirection: 'desc'
                 })}
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
-                Clear All Filters
+                Clear Filters
               </button>
             </div>
           </div>

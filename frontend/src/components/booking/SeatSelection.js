@@ -5,10 +5,10 @@ import {
   ClockIcon, 
   MapPinIcon, 
   CurrencyRupeeIcon,
-  InformationCircleIcon 
+  InformationCircleIcon,
+  ChevronLeftIcon 
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../contexts/AuthContext';
-import bookingService from '../../services/bookingService';
 
 const SeatSelection = () => {
   const { showId } = useParams();
@@ -21,10 +21,15 @@ const SeatSelection = () => {
   
   const [seats, setSeats] = useState([]);
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [blockedSeats, setBlockedSeats] = useState([]);
+  const [reservedSeats, setReservedSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [blockingSeats, setBlockingSeats] = useState(false);
+  const [reservingSeats, setReservingSeats] = useState(false);
+  const [bookingSummary, setBookingSummary] = useState(null);
+  const [showSummary, setShowSummary] = useState(false);
+
+  // API base URL
+  const API_BASE_URL = 'http://localhost:8080/api';
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -32,54 +37,81 @@ const SeatSelection = () => {
       return;
     }
 
-    const loadSeats = async () => {
-      try {
-        setLoading(true);
-        const seatsData = await bookingService.getSeatsByShow(showId);
-        setSeats(seatsData);
-      } catch (err) {
-        console.error('Error loading seats:', err);
-        setError('Failed to load seat layout');
-      } finally {
-        setLoading(false);
+    loadSeats();
+  }, [showId, isAuthenticated, navigate, location]);
+
+  const loadSeats = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/seats/show/${showId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch seats');
       }
-    };
-
-    if (showId) {
-      loadSeats();
+      
+      const seatsData = await response.json();
+      setSeats(seatsData);
+    } catch (err) {
+      console.error('Error loading seats:', err);
+      setError('Failed to load seat layout');
+    } finally {
+      setLoading(false);
     }
-  }, [showId, isAuthenticated, navigate, location.pathname]);
+  };
 
-  // Auto-block selected seats when selection changes
   useEffect(() => {
-    let blockingTimeout;
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+
+    loadSeats();
+  }, [showId, isAuthenticated, navigate, location]);
+
+  // Reserve seats when selection changes
+  useEffect(() => {
+    let reserveTimeout;
     
     if (selectedSeats.length > 0) {
-      setBlockingSeats(true);
+      setReservingSeats(true);
       
-      // Block seats after 500ms delay to avoid too many API calls
-      blockingTimeout = setTimeout(async () => {
+      // Reserve seats after 500ms delay to avoid too many API calls
+      reserveTimeout = setTimeout(async () => {
         try {
-          await bookingService.blockSeats(selectedSeats.map(seat => seat.id), showId);
-          setBlockedSeats(prev => [...prev, ...selectedSeats.map(seat => seat.id)]);
+          const response = await fetch(`${API_BASE_URL}/booking/seats/reserve`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({
+              showId: parseInt(showId),
+              seatIds: selectedSeats.map(seat => seat.id),
+              reservationTimeMinutes: 10
+            })
+          });
+          
+          if (response.ok) {
+            setReservedSeats(prev => [...prev, ...selectedSeats.map(seat => seat.id)]);
+          }
         } catch (err) {
-          console.error('Error blocking seats:', err);
+          console.error('Error reserving seats:', err);
         } finally {
-          setBlockingSeats(false);
+          setReservingSeats(false);
         }
       }, 500);
     }
 
     return () => {
-      if (blockingTimeout) {
-        clearTimeout(blockingTimeout);
+      if (reserveTimeout) {
+        clearTimeout(reserveTimeout);
       }
     };
   }, [selectedSeats, showId]);
 
   const handleSeatClick = (seat) => {
-    // Can't select booked or blocked seats (unless blocked by current user)
-    if (seat.isBooked || (seat.isBlocked && !blockedSeats.includes(seat.id))) {
+    // Can't select unavailable or blocked seats (unless reserved by current user)
+    if (!seat.isAvailable || (seat.isBlocked && !reservedSeats.includes(seat.id))) {
       return;
     }
 
@@ -102,11 +134,11 @@ const SeatSelection = () => {
   const getSeatStatusClass = (seat) => {
     const isSelected = selectedSeats.some(s => s.id === seat.id);
     
-    if (seat.isBooked) {
+    if (!seat.isAvailable) {
       return 'bg-red-500 cursor-not-allowed';
     }
     
-    if (seat.isBlocked && !blockedSeats.includes(seat.id)) {
+    if (seat.isBlocked && !reservedSeats.includes(seat.id)) {
       return 'bg-orange-400 cursor-not-allowed';
     }
     
@@ -138,43 +170,126 @@ const SeatSelection = () => {
 
   const calculateTotal = () => {
     return selectedSeats.reduce((total, seat) => {
-      return total + getSeatPrice(seat.seatType);
+      return total + (seat.price || 0);
     }, 0);
   };
 
-  const handleProceedToBooking = () => {
+  const getBookingSummary = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/booking/summary?showId=${showId}&seatIds=${selectedSeats.map(s => s.id).join(',')}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (response.ok) {
+        const summary = await response.json();
+        return summary;
+      }
+    } catch (err) {
+      console.error('Error getting booking summary:', err);
+    }
+    return null;
+  };
+
+  const handleBookNow = async () => {
     if (selectedSeats.length === 0) {
       alert('Please select at least one seat');
       return;
     }
 
-    navigate('/booking/confirm', {
-      state: {
-        show,
-        movie,
-        selectedSeats,
-        totalAmount: calculateTotal(),
-        from: location.pathname
+    try {
+      setReservingSeats(true);
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to book tickets');
+        navigate('/login');
+        return;
       }
-    });
+
+      // Create a simple booking object for demonstration
+      const bookingData = {
+        showId: parseInt(showId),
+        movieTitle: movie?.title || 'Unknown Movie',
+        venueName: show?.venue?.name || 'Unknown Venue',
+        showDate: show?.showDate || new Date().toISOString().split('T')[0],
+        showTime: show?.showTime || 'Unknown Time',
+        seats: selectedSeats.map(seat => ({
+          id: seat.id,
+          seatNumber: seat.displayName || `${seat.seatRow}${seat.seatNumber}`,
+          price: seat.price,
+          type: seat.seatType
+        })),
+        totalAmount: selectedSeats.reduce((total, seat) => total + (seat.price || 0), 0),
+        bookingDate: new Date().toISOString(),
+        status: 'CONFIRMED'
+      };
+
+      // Store in localStorage for admin dashboard demo
+      const existingBookings = JSON.parse(localStorage.getItem('demoBookings') || '[]');
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      console.log('SeatSelection - Current User when creating booking:', currentUser);
+      
+      const newBooking = {
+        ...bookingData,
+        id: Date.now(), // Simple ID generation
+        userId: currentUser.id,
+        userEmail: currentUser.email,
+        userFirstName: currentUser.firstName || 'Demo',
+        userLastName: currentUser.lastName || 'User'
+      };
+      
+      console.log('SeatSelection - New booking being created:', newBooking);
+      
+      existingBookings.push(newBooking);
+      localStorage.setItem('demoBookings', JSON.stringify(existingBookings));
+      
+      console.log('SeatSelection - All bookings after adding new one:', existingBookings);
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('bookingCreated', {
+        detail: newBooking
+      }));
+      
+      // Show success message
+      alert(`Booking confirmed! 
+Movie: ${bookingData.movieTitle}
+Venue: ${bookingData.venueName}
+Date: ${bookingData.showDate} at ${bookingData.showTime}
+Seats: ${bookingData.seats.map(s => s.seatNumber).join(', ')}
+Total: ₹${bookingData.totalAmount}`);
+      
+      // Navigate to user bookings page
+      navigate('/user/bookings');
+      
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert(`Booking failed: ${error.message}`);
+    } finally {
+      setReservingSeats(false);
+    }
   };
 
   // Group seats by row
   const groupSeatsByRow = (seats) => {
     const grouped = {};
     seats.forEach(seat => {
-      const row = seat.rowNumber || seat.seatNumber?.charAt(0) || 'A';
+      // Use seatRow directly since our API provides it as a separate field
+      const row = seat.seatRow || seat.rowNumber || 'A';
       if (!grouped[row]) {
         grouped[row] = [];
       }
       grouped[row].push(seat);
     });
     
-    // Sort seats within each row
+    // Sort seats within each row by seatNumber
     Object.keys(grouped).forEach(row => {
       grouped[row].sort((a, b) => {
-        const aNum = parseInt(a.seatNumber?.slice(1) || a.columnNumber || 1);
-        const bNum = parseInt(b.seatNumber?.slice(1) || b.columnNumber || 1);
+        // seatNumber is already a number from our API
+        const aNum = a.seatNumber || a.columnNumber || 1;
+        const bNum = b.seatNumber || b.columnNumber || 1;
         return aNum - bNum;
       });
     });
@@ -277,7 +392,7 @@ const SeatSelection = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 bg-orange-400 rounded"></div>
-                  <span>Blocked</span>
+                  <span>Reserved</span>
                 </div>
               </div>
 
@@ -307,17 +422,17 @@ const SeatSelection = () => {
                                 {showAisle && <div className="w-4"></div>}
                                 <button
                                   onClick={() => handleSeatClick(seat)}
-                                  disabled={seat.isBooked || (seat.isBlocked && !blockedSeats.includes(seat.id))}
+                                  disabled={!seat.isAvailable || (seat.isBlocked && !reservedSeats.includes(seat.id))}
                                   className={`
                                     w-8 h-8 rounded border text-xs font-medium transition-all duration-200
                                     ${getSeatStatusClass(seat)}
-                                    ${seat.isBooked || (seat.isBlocked && !blockedSeats.includes(seat.id)) 
+                                    ${!seat.isAvailable || (seat.isBlocked && !reservedSeats.includes(seat.id)) 
                                       ? '' : 'cursor-pointer transform hover:scale-105'
                                     }
                                   `}
-                                  title={`${seat.seatNumber} - ${seat.seatType} - ₹${getSeatPrice(seat.seatType)}`}
+                                  title={`${seat.displayName || seat.seatRow + seat.seatNumber} - ${seat.seatType} - ₹${seat.price || 0}`}
                                 >
-                                  {seat.seatNumber?.slice(1) || seat.columnNumber}
+                                  {seat.seatNumber}
                                 </button>
                               </React.Fragment>
                             );
@@ -388,17 +503,17 @@ const SeatSelection = () => {
                   {/* Action Buttons */}
                   <div className="space-y-3">
                     <button
-                      onClick={handleProceedToBooking}
-                      disabled={blockingSeats || selectedSeats.length === 0}
+                      onClick={handleBookNow}
+                      disabled={reservingSeats || selectedSeats.length === 0}
                       className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {blockingSeats ? 'Booking Seats...' : 'Proceed to Payment'}
+                      {reservingSeats ? 'Booking Tickets...' : 'Book Now'}
                     </button>
                     
                     <button
                       onClick={() => {
                         setSelectedSeats([]);
-                        setBlockedSeats([]);
+                        setReservedSeats([]);
                       }}
                       className="w-full text-gray-600 py-2 text-sm hover:text-gray-800"
                     >
@@ -411,7 +526,7 @@ const SeatSelection = () => {
               {/* Important Notes */}
               <div className="mt-6 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                 <p className="text-xs text-yellow-800">
-                  <strong>Note:</strong> Selected seats are temporarily blocked for you. 
+                  <strong>Note:</strong> Selected seats are temporarily reserved for you. 
                   Complete booking within 10 minutes or seats will be released.
                 </p>
               </div>

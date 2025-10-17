@@ -5,8 +5,10 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "seats", uniqueConstraints = {
@@ -22,6 +24,7 @@ public class Seat extends BaseEntity {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "show_id", nullable = false)
+    @JsonIgnoreProperties({"seats", "movie", "venue"}) // Prevent circular reference
     private Show show;
 
     @NotBlank
@@ -47,6 +50,9 @@ public class Seat extends BaseEntity {
     @Builder.Default
     @Column(name = "is_blocked", nullable = false)
     private Boolean isBlocked = false; // Temporarily blocked during booking
+
+    @Column(name = "blocked_until")
+    private LocalDateTime blockedUntil; // When the block expires
 
     public Seat(Show show, String seatRow, Integer seatNumber, String seatType, BigDecimal price) {
         this.show = show;

@@ -9,9 +9,10 @@ import {
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import bookingService from '../../services/bookingService';
+import movieService from '../../services/movieService';
 
 const ShowSelection = () => {
-  const { id: movieId } = useParams();
+  const { id, movieId } = useParams();
   const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
   const [shows, setShows] = useState([]);
@@ -22,6 +23,9 @@ const ShowSelection = () => {
   const [selectedVenue, setSelectedVenue] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Get the actual movie ID (handle both URL patterns)
+  const actualMovieId = movieId || id;
 
   // Generate next 7 days for date selection
   const getNextSevenDays = () => {
@@ -51,7 +55,7 @@ const ShowSelection = () => {
 
   useEffect(() => {
     loadMovieAndShows();
-  }, [movieId]);
+  }, [actualMovieId]);
 
   useEffect(() => {
     if (selectedCity || selectedDate || selectedVenue) {
@@ -63,29 +67,24 @@ const ShowSelection = () => {
     try {
       setLoading(true);
       
-      // Load movie details (mock for now)
-      const movieData = {
-        id: movieId,
-        title: 'Sample Movie',
-        genre: 'Action, Adventure',
-        duration: '2h 30min',
-        rating: 'PG-13',
-        posterUrl: '/placeholder-movie.jpg',
-        description: 'An exciting movie experience awaits you.'
-      };
+      // Load movie details from API
+      const movieData = await movieService.getMovieById(actualMovieId);
       setMovie(movieData);
 
       // Load shows, venues, and cities
-      const [showsData, venuesData] = await Promise.all([
-        bookingService.getShows(movieId),
+      const [showsResponse, venuesData] = await Promise.all([
+        bookingService.getShows(actualMovieId),
         bookingService.getVenues()
       ]);
 
-      setShows(showsData);
+      // Extract shows from paginated response
+      setShows(showsResponse.content || []);
       setVenues(venuesData);
 
-      // Extract unique cities from venues
-      const uniqueCities = [...new Set(venuesData.map(venue => venue.city))];
+      // Extract unique cities from venues - handle city objects properly
+      const uniqueCities = [...new Set(venuesData.map(venue => 
+        venue.city && typeof venue.city === 'object' ? venue.city.name : venue.city
+      ))].filter(city => city); // Remove any null/undefined values
       setCities(uniqueCities);
       
       if (uniqueCities.length > 0) {
@@ -98,7 +97,7 @@ const ShowSelection = () => {
       
       // Mock data as fallback
       setMovie({
-        id: movieId,
+        id: actualMovieId,
         title: 'The Avengers: Endgame',
         genre: 'Action, Adventure, Sci-Fi',
         duration: '3h 1min',
@@ -110,7 +109,7 @@ const ShowSelection = () => {
       const mockShows = [
         {
           id: 1,
-          movieId: movieId,
+          movieId: actualMovieId,
           venue: { id: 1, name: 'PVR Cinemas Forum Mall', city: 'Bangalore', address: 'Forum Mall, Koramangala' },
           showDate: availableDates[0].date,
           showTime: '10:00',
@@ -119,7 +118,7 @@ const ShowSelection = () => {
         },
         {
           id: 2,
-          movieId: movieId,
+          movieId: actualMovieId,
           venue: { id: 1, name: 'PVR Cinemas Forum Mall', city: 'Bangalore', address: 'Forum Mall, Koramangala' },
           showDate: availableDates[0].date,
           showTime: '14:30',
@@ -128,7 +127,7 @@ const ShowSelection = () => {
         },
         {
           id: 3,
-          movieId: movieId,
+          movieId: actualMovieId,
           venue: { id: 2, name: 'INOX Garuda Mall', city: 'Bangalore', address: 'Garuda Mall, Magrath Road' },
           showDate: availableDates[0].date,
           showTime: '18:00',
@@ -151,12 +150,13 @@ const ShowSelection = () => {
 
   const loadFilteredShows = async () => {
     try {
-      const filteredShows = await bookingService.getShows(movieId, {
+      const filteredShowsResponse = await bookingService.getShows(actualMovieId, {
         city: selectedCity,
         date: selectedDate,
         venueId: selectedVenue
       });
-      setShows(filteredShows);
+      // Extract shows from paginated response
+      setShows(filteredShowsResponse.content || []);
     } catch (err) {
       console.error('Error loading filtered shows:', err);
       // Keep existing shows as fallback
@@ -174,7 +174,11 @@ const ShowSelection = () => {
 
   const groupShowsByVenue = () => {
     const filteredShows = shows.filter(show => {
-      return (!selectedCity || show.venue?.city === selectedCity) &&
+      const venueCityName = show.venue?.city && typeof show.venue.city === 'object' 
+        ? show.venue.city.name 
+        : show.venue?.city;
+      
+      return (!selectedCity || venueCityName === selectedCity) &&
              (!selectedDate || show.showDate === selectedDate) &&
              (!selectedVenue || show.venue?.id === parseInt(selectedVenue));
     });
@@ -303,7 +307,12 @@ const ShowSelection = () => {
               >
                 <option value="">All Venues</option>
                 {venues
-                  .filter(venue => !selectedCity || venue.city === selectedCity)
+                  .filter(venue => {
+                    const venueCityName = venue.city && typeof venue.city === 'object' 
+                      ? venue.city.name 
+                      : venue.city;
+                    return !selectedCity || venueCityName === selectedCity;
+                  })
                   .map(venue => (
                     <option key={venue.id} value={venue.id}>{venue.name}</option>
                   ))}

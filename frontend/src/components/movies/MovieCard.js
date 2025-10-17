@@ -37,12 +37,12 @@ const MovieCard = ({ movie }) => {
         )}
         
         {/* Now Showing / Coming Soon Badge */}
-        {movie.nowShowing && (
+        {movie.isNowShowing && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
             NOW SHOWING
           </div>
         )}
-        {movie.comingSoon && (
+        {movie.isComingSoon && (
           <div className="absolute top-2 right-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
             COMING SOON
           </div>
@@ -75,10 +75,10 @@ const MovieCard = ({ movie }) => {
             </div>
           )}
           
-          {movie.duration && (
+          {movie.durationMinutes && (
             <div className="flex items-center">
               <span className="font-medium">Duration:</span>
-              <span className="ml-1">{formatDuration(movie.duration)}</span>
+              <span className="ml-1">{formatDuration(movie.durationMinutes)}</span>
             </div>
           )}
           
@@ -108,7 +108,7 @@ const MovieCard = ({ movie }) => {
             View Details
           </Link>
           
-          {movie.nowShowing && (
+          {movie.isNowShowing && (
             <Link
               to={`/book/${movie.id}`}
               className="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors duration-200 text-center text-sm font-medium"
