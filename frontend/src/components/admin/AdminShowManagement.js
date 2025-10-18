@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import adminService from '../../services/adminService';
 import movieService from '../../services/movieService';
@@ -24,11 +24,8 @@ const AdminShowManagement = () => {
     isActive: true
   });
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
+  // Load initial data (hoisted function so it's safe to call from effects and handlers)
+  async function loadInitialData() {
     try {
       setLoading(true);
       const [showsData, moviesData, venuesData] = await Promise.all([
@@ -36,16 +33,61 @@ const AdminShowManagement = () => {
         movieService.getMovies({}),
         adminService.getVenues()
       ]);
-      
-      setShows(showsData.content || []);
-      setMovies(moviesData.content || []);
+
+      const showsList = (showsData && showsData.content) || [];
+      setShows(showsList);
+      setMovies((moviesData && moviesData.content) || []);
       setVenues(venuesData || []);
+
+      // Sync shows to localStorage for BookMovie component
+      syncShowsToLocalStorage(showsList);
     } catch (err) {
-      setError('Failed to load data: ' + err.message);
+      setError('Failed to load data: ' + (err && err.message ? err.message : err));
     } finally {
       setLoading(false);
     }
+  }
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // Sync shows to localStorage for BookMovie component
+  const syncShowsToLocalStorage = (showsList) => {
+    try {
+      const adminShows = {};
+      
+      showsList.forEach(show => {
+        const movieId = show.movie?.id;
+        const showDate = show.showDate;
+        
+        if (movieId && showDate) {
+          if (!adminShows[movieId]) {
+            adminShows[movieId] = {};
+          }
+          if (!adminShows[movieId][showDate]) {
+            adminShows[movieId][showDate] = [];
+          }
+          
+          adminShows[movieId][showDate].push({
+            id: show.id,
+            time: show.showTime,
+            venue: show.venue?.name || 'Unknown Venue',
+            screen: show.screenName || 'Screen 1',
+            availableSeats: show.availableSeats || 0,
+            totalSeats: show.totalSeats || 150,
+            price: show.price || 0,
+            format: 'Standard' // Default format, can be enhanced
+          });
+        }
+      });
+      
+      localStorage.setItem('adminShows', JSON.stringify(adminShows));
+    } catch (error) {
+      console.error('Failed to sync shows to localStorage:', error);
+    }
   };
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +119,7 @@ const AdminShowManagement = () => {
       }
       
       resetForm();
-      loadInitialData();
+      loadInitialData(); // This will also sync to localStorage
     } catch (err) {
       setError(err.message);
     }

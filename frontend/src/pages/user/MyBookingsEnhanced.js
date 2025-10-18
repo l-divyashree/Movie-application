@@ -9,7 +9,7 @@ const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -26,6 +26,14 @@ const MyBookings = () => {
       loadBookings();
     };
     
+    // Listen for localStorage changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'userBookings') {
+        console.log('MyBookingsEnhanced - Storage change detected');
+        loadBookings();
+      }
+    };
+    
     // Also reload when navigating to this page
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -34,20 +42,14 @@ const MyBookings = () => {
       }
     };
     
-    // Listen for new bookings
-    const handleBookingCreated = () => {
-      console.log('MyBookingsEnhanced - Booking created event received');
-      loadBookings();
-    };
-    
     window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleStorageChange);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('bookingCreated', handleBookingCreated);
     
     return () => {
       window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('bookingCreated', handleBookingCreated);
     };
   }, []);
 
@@ -56,75 +58,55 @@ const MyBookings = () => {
     try {
       setLoading(true);
       
-      // Try to load from API first
-      let apiBookings = [];
-      try {
-        const data = await bookingService.getUserBookings();
-        apiBookings = Array.isArray(data) ? data : (data.content || []);
-      } catch (apiError) {
-        console.log('API bookings not available, using demo data');
-      }
+      // Load bookings from localStorage
+      const userBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
       
-      // Load demo bookings from localStorage
-      const demoBookings = JSON.parse(localStorage.getItem('demoBookings') || '[]');
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      console.log('MyBookingsEnhanced - User Bookings:', userBookings);
       
-      console.log('MyBookingsEnhanced - Current User:', currentUser);
-      console.log('MyBookingsEnhanced - All Demo Bookings:', demoBookings);
-      
-      // Filter demo bookings for current user
-      const userDemoBookings = demoBookings
-        .filter(booking => {
-          console.log('Checking booking userId:', booking.userId, 'vs current user id:', currentUser.id);
-          return booking.userId === currentUser.id;
-        })
-        .map(booking => ({
-          id: booking.id,
-          bookingReference: `BK${booking.id}`,
-          status: booking.status || 'CONFIRMED',
-          bookingDate: booking.bookingDate,
-          totalAmount: booking.totalAmount,
-          numberOfTickets: booking.seats?.length || 1,
-          paymentStatus: 'PAID',
-          qrCode: `QR${booking.id}`,
-          canCancel: true,
-          cancellationDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
-          refundAmount: booking.totalAmount * 0.9, // 90% refund
-          show: {
-            id: booking.showId || 1,
-            movie: { 
-              id: 1, 
-              title: booking.movieTitle,
-              posterUrl: '/placeholder-movie.jpg',
+      // Transform bookings to match expected format
+      const transformedBookings = userBookings.map(booking => ({
+        id: booking.id,
+        bookingReference: `BK${booking.id}`,
+        status: booking.status || 'CONFIRMED',
+        bookingDate: booking.bookingDate,
+        totalAmount: booking.totalAmount,
+        numberOfTickets: booking.seats?.length || 1,
+        paymentStatus: 'PAID',
+        qrCode: `QR${booking.id}`,
+        canCancel: true,
+        cancellationDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+        refundAmount: booking.totalAmount * 0.9, // 90% refund
+        show: {
+          id: booking.showId || 1,
+          movie: { 
+            id: booking.movieId || 1, 
+            title: booking.movieTitle,
+            posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
               duration: 150,
               genre: 'Action',
               rating: 'PG-13'
             },
-            venue: { 
-              id: 1, 
-              name: booking.venueName,
-              address: booking.venueName,
-              city: { name: 'Bangalore' }
-            },
-            showDate: booking.showDate,
-            showTime: booking.showTime,
-            screen: { id: 1, name: 'Screen 1', type: 'REGULAR' }
+          venue: { 
+            id: 1, 
+            name: booking.venue || 'CinemaFlix IMAX',
+            address: booking.venue || 'CinemaFlix IMAX',
+            city: { name: 'Bangalore' }
           },
-          seats: booking.seats?.map((seat, index) => ({
-            id: index + 1,
-            seatNumber: seat.seatNumber,
-            seatType: seat.type || 'REGULAR',
-            price: seat.price || 250
-          })) || []
-        }));
+          showDate: booking.date,
+          showTime: booking.showTime,
+          screen: { id: 1, name: 'Screen 1', type: 'REGULAR' }
+        },
+        seats: booking.seats?.map((seatId, index) => ({
+          id: index + 1,
+          seatNumber: seatId,
+          seatType: 'REGULAR',
+          price: booking.totalAmount / booking.seats.length || 250
+        })) || []
+      }));
       
-      console.log('MyBookingsEnhanced - Filtered Demo Bookings:', userDemoBookings);
+      console.log('MyBookingsEnhanced - Transformed Bookings:', transformedBookings);
       
-      // Combine API and demo bookings
-      const allBookings = [...apiBookings, ...userDemoBookings];
-      console.log('MyBookingsEnhanced - All bookings to display:', allBookings);
-      
-      setBookings(allBookings);
+      setBookings(transformedBookings);
     } catch (err) {
       console.error('Error loading bookings:', err);
       setError('Failed to load bookings');
@@ -374,36 +356,35 @@ const MyBookings = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-neutral-900">
+        <div className="animate-spin rounded-full h-28 w-28 border-b-4 border-red-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-neutral-900 text-white py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+        <div className="bg-gradient-to-r from-black/70 to-neutral-800 rounded-lg shadow-sm p-6 mb-8 border border-neutral-800">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Bookings</h1>
-              <p className="text-gray-600 mt-2">Manage your movie tickets and bookings</p>
+              <h1 className="text-3xl font-extrabold text-red-500">My Bookings</h1>
+              <p className="text-neutral-300 mt-2">Manage your movie tickets and bookings</p>
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={loadBookings}
-                disabled={loading}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+                <span>Refresh</span>
               </button>
               <button
                 onClick={() => navigate('/user/dashboard')}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
+                className="bg-transparent hover:bg-neutral-800 border border-neutral-700 text-neutral-200 px-4 py-2 rounded-lg transition-colors"
               >
                 ← Back to Dashboard
               </button>
@@ -413,55 +394,40 @@ const MyBookings = () => {
 
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-neutral-850/60 rounded-lg shadow-sm p-6 border border-neutral-800">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100">
-                <span className="text-blue-600 text-xl">🎫</span>
+              <div className="p-3 rounded-full bg-black/40">
+                <span className="text-red-400 text-xl">🎫</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">{bookings.length}</p>
+                <p className="text-sm font-medium text-neutral-300">Total Bookings</p>
+                <p className="text-2xl font-bold text-white">{bookings.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-neutral-850/60 rounded-lg shadow-sm p-6 border border-neutral-800">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-green-100">
-                <span className="text-green-600 text-xl">⏰</span>
+              <div className="p-3 rounded-full bg-black/40">
+                <span className="text-red-400 text-xl">⏰</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Upcoming</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-neutral-300">Upcoming</p>
+                <p className="text-2xl font-bold text-white">
                   {bookings.filter(b => new Date(b.show.showDateTime) > new Date() && b.status === 'CONFIRMED').length}
                 </p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-neutral-850/60 rounded-lg shadow-sm p-6 border border-neutral-800">
             <div className="flex items-center">
-              <div className="p-3 rounded-full bg-purple-100">
-                <span className="text-purple-600 text-xl">✅</span>
+              <div className="p-3 rounded-full bg-black/40">
+                <span className="text-red-400 text-xl">💰</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {bookings.filter(b => b.status === 'COMPLETED').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-yellow-100">
-                <span className="text-yellow-600 text-xl">💰</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Spent</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ${bookings.filter(b => b.status !== 'CANCELLED').reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)}
+                <p className="text-sm font-medium text-neutral-300">Total Spent</p>
+                <p className="text-2xl font-bold text-white">
+                  ₹{bookings.filter(b => b.status !== 'CANCELLED').reduce((sum, b) => sum + b.totalAmount, 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -474,18 +440,16 @@ const MyBookings = () => {
             <div className="flex justify-between items-center px-6 py-4">
               <nav className="-mb-px flex space-x-8">
                 {[
-                  { id: 'upcoming', label: 'Upcoming' },
-                  { id: 'past', label: 'Past Bookings' },
-                  { id: 'cancelled', label: 'Cancelled' },
-                  { id: 'all', label: 'All Bookings' }
+                  { id: 'all', label: 'All Bookings' },
+                  { id: 'cancelled', label: 'Cancelled' }
                 ].map(tab => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-red-500 text-red-400'
+                        : 'border-transparent text-neutral-400 hover:text-neutral-200 hover:border-neutral-700'
                     }`}
                   >
                     {tab.label}
@@ -493,22 +457,14 @@ const MyBookings = () => {
                 ))}
               </nav>
 
-              <div className="flex space-x-4">
-                <input
-                  type="text"
-                  placeholder="Search bookings..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-2 border border-neutral-700 bg-neutral-900/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 text-neutral-200"
                 >
                   <option value="all">All Status</option>
                   <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
               </div>
@@ -520,31 +476,31 @@ const MyBookings = () => {
             {filteredBookings.length > 0 ? (
               <div className="space-y-6">
                 {filteredBookings.map((booking) => (
-                  <div key={booking.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div key={booking.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow bg-neutral-800 border-neutral-700">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex space-x-4">
-                        <div className="w-20 h-28 bg-gray-300 rounded flex items-center justify-center flex-shrink-0">
-                          <span className="text-gray-600 text-xs">IMG</span>
+                        <div className="w-20 h-28 bg-neutral-700 rounded flex items-center justify-center flex-shrink-0">
+                          <span className="text-neutral-300 text-xs">IMG</span>
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-xl font-semibold text-gray-900">{booking.show.movie.title}</h3>
+                            <h3 className="text-xl font-semibold text-white">{booking.show.movie.title}</h3>
                             <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
                               {booking.status}
                             </span>
                           </div>
-                          <p className="text-gray-600 mb-1">{booking.show.venue.name}</p>
-                          <p className="text-sm text-gray-500 mb-2">{booking.show.venue.address}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+                          <p className="text-neutral-300 mb-1">{booking.show.venue.name}</p>
+                          <p className="text-sm text-neutral-400 mb-2">{booking.show.venue.address}</p>
+                          <div className="flex items-center space-x-4 text-sm text-neutral-300">
                             <span>📅 {new Date(booking.show.showDateTime).toLocaleDateString()}</span>
                             <span>🕐 {new Date(booking.show.showDateTime).toLocaleTimeString()}</span>
                             <span>🎬 {booking.show.format}</span>
                             <span>💺 {booking.seats.map(seat => seat.seatNumber).join(', ')}</span>
                           </div>
                           <div className="mt-2 flex items-center space-x-4 text-sm">
-                            <span className="font-medium">Booking ID: {booking.bookingReference}</span>
-                            <span>Tickets: {booking.numberOfTickets}</span>
-                            <span className="font-semibold text-green-600">${booking.totalAmount.toFixed(2)}</span>
+                            <span className="font-medium text-neutral-200">Booking ID: {booking.bookingReference}</span>
+                            <span className="text-neutral-300">Tickets: {booking.numberOfTickets}</span>
+                            <span className="font-semibold text-red-400">${booking.totalAmount.toFixed(2)}</span>
                           </div>
                         </div>
                       </div>
@@ -559,19 +515,19 @@ const MyBookings = () => {
                               setSelectedBooking(booking);
                               setShowQRModal(true);
                             }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
                             📱 Show QR Code
                           </button>
                           <button
                             onClick={() => downloadETicket(booking)}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
                             📥 Download E-Ticket
                           </button>
                           <button
                             onClick={() => shareBooking(booking)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
                             📤 Share
                           </button>
@@ -593,19 +549,19 @@ const MyBookings = () => {
                         <>
                           <button
                             onClick={() => rebookMovie(booking)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
                             🔄 Book Again
                           </button>
                           <button
                             onClick={() => rateMovie(booking)}
-                            className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
                             ⭐ Rate Movie
                           </button>
                           <button
                             onClick={() => downloadETicket(booking)}
-                            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                           >
                             📄 Download Invoice
                           </button>
@@ -637,10 +593,10 @@ const MyBookings = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">🎫</div>
-                <p className="text-gray-500 text-lg mb-2">No bookings found</p>
-                <p className="text-gray-400 text-sm mb-6">
+              <div className="text-center py-12 text-neutral-300">
+                <div className="text-red-400 text-6xl mb-4">🎫</div>
+                <p className="text-neutral-200 text-lg mb-2">No bookings found</p>
+                <p className="text-neutral-400 text-sm mb-6">
                   {activeTab === 'upcoming' && 'No upcoming bookings'}
                   {activeTab === 'past' && 'No past bookings'}
                   {activeTab === 'cancelled' && 'No cancelled bookings'}
@@ -648,7 +604,7 @@ const MyBookings = () => {
                 </p>
                 <button
                   onClick={() => navigate('/movies')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
                 >
                   Browse Movies
                 </button>

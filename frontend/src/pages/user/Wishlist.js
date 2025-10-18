@@ -1,379 +1,287 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  HeartIcon as HeartSolid,
+  StarIcon,
+  CalendarIcon,
+  ClockIcon,
+  FilmIcon
+} from '@heroicons/react/24/solid';
+import { HeartIcon as HeartOutline } from '@heroicons/react/24/outline';
 
 const Wishlist = () => {
   const navigate = useNavigate();
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sortBy, setSortBy] = useState('dateAdded');
-  const [filterBy, setFilterBy] = useState('all');
+
+  // Mock movie data to match with wishlist IDs
+  const movieDatabase = {
+    1: {
+      id: 1,
+      title: 'Dune: Part Two',
+      genre: 'Sci-Fi, Adventure',
+      language: 'English',
+      rating: 8.5,
+      duration: 166,
+      releaseDate: '2024-03-01',
+      poster: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+      isNowShowing: true,
+      price: 350
+    },
+    2: {
+      id: 2,
+      title: 'Godzilla x Kong: The New Empire',
+      genre: 'Action, Adventure',
+      language: 'English',
+      rating: 6.4,
+      duration: 115,
+      releaseDate: '2024-03-29',
+      poster: 'https://image.tmdb.org/t/p/w500/gmGK92wI1dwI5F1kmrvCRzKRGAJ.jpg',
+      isNowShowing: true,
+      price: 300
+    },
+    3: {
+      id: 3,
+      title: 'Deadpool & Wolverine',
+      genre: 'Action, Comedy',
+      language: 'English',
+      rating: 7.8,
+      duration: 128,
+      releaseDate: '2024-07-26',
+      poster: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg',
+      isNowShowing: true,
+      price: 400
+    },
+    4: {
+      id: 4,
+      title: 'Inside Out 2',
+      genre: 'Animation, Family',
+      language: 'English',
+      rating: 7.6,
+      duration: 96,
+      releaseDate: '2024-06-14',
+      poster: 'https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg',
+      isNowShowing: true,
+      price: 250
+    },
+    5: {
+      id: 5,
+      title: 'Transformers One',
+      genre: 'Animation, Action',
+      language: 'English',
+      rating: 7.9,
+      duration: 104,
+      releaseDate: '2024-09-20',
+      poster: 'https://image.tmdb.org/t/p/w500/qbkAqmmEIZfrCO8ZQAuIuVMlWoV.jpg',
+      isNowShowing: false,
+      price: 320
+    },
+    6: {
+      id: 6,
+      title: 'The Wild Robot',
+      genre: 'Animation, Family',
+      language: 'English',
+      rating: 8.3,
+      duration: 102,
+      releaseDate: '2024-09-27',
+      poster: 'https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg',
+      isNowShowing: true,
+      price: 280
+    }
+  };
 
   useEffect(() => {
     fetchWishlist();
+    
+    // Listen for storage changes to update wishlist in real-time
+    const handleStorageChange = (e) => {
+      if (e.key === 'movieWishlist') {
+        fetchWishlist();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
-  const fetchWishlist = async () => {
+  const fetchWishlist = () => {
     try {
       setLoading(true);
-      // Mock wishlist data
-      const mockWishlist = [
-        {
-          id: 1,
-          movieId: 'MOV001',
-          title: 'Spider-Man: No Way Home',
-          genre: 'Action, Adventure',
-          rating: 8.4,
-          duration: 148,
-          language: 'English',
-          releaseDate: '2021-12-17',
-          director: 'Jon Watts',
-          cast: ['Tom Holland', 'Zendaya', 'Benedict Cumberbatch'],
-          description: 'Peter Parker seeks help from Doctor Strange when his identity is revealed.',
-          posterUrl: '/placeholder-movie.jpg',
-          dateAdded: '2025-01-15T10:30:00Z',
-          status: 'now-showing',
-          availableShows: 15
-        },
-        {
-          id: 2,
-          movieId: 'MOV002',
-          title: 'The Batman',
-          genre: 'Action, Crime, Drama',
-          rating: 7.8,
-          duration: 176,
-          language: 'English',
-          releaseDate: '2022-03-04',
-          director: 'Matt Reeves',
-          cast: ['Robert Pattinson', 'Zoë Kravitz', 'Paul Dano'],
-          description: 'Batman ventures into Gotham City\'s underworld when a sadistic killer leaves behind a trail of cryptic clues.',
-          posterUrl: '/placeholder-movie.jpg',
-          dateAdded: '2025-01-10T15:45:00Z',
-          status: 'now-showing',
-          availableShows: 8
-        },
-        {
-          id: 3,
-          movieId: 'MOV003',
-          title: 'Dune: Part Two',
-          genre: 'Sci-Fi, Adventure',
-          rating: 8.9,
-          duration: 166,
-          language: 'English',
-          releaseDate: '2024-03-01',
-          director: 'Denis Villeneuve',
-          cast: ['Timothée Chalamet', 'Zendaya', 'Rebecca Ferguson'],
-          description: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators.',
-          posterUrl: '/placeholder-movie.jpg',
-          dateAdded: '2025-01-08T20:15:00Z',
-          status: 'coming-soon',
-          availableShows: 0
-        },
-        {
-          id: 4,
-          movieId: 'MOV004',
-          title: 'Avengers: Endgame',
-          genre: 'Action, Adventure, Drama',
-          rating: 8.4,
-          duration: 181,
-          language: 'English',
-          releaseDate: '2019-04-26',
-          director: 'Anthony Russo, Joe Russo',
-          cast: ['Robert Downey Jr.', 'Chris Evans', 'Mark Ruffalo'],
-          description: 'The Avengers assemble once more to reverse Thanos\' actions.',
-          posterUrl: '/placeholder-movie.jpg',
-          dateAdded: '2025-01-05T18:20:00Z',
-          status: 'ended',
-          availableShows: 0
-        }
-      ];
-      setWishlistItems(mockWishlist);
+      
+      // Get wishlist IDs from localStorage
+      const savedWishlist = localStorage.getItem('movieWishlist');
+      const wishlistIds = savedWishlist ? JSON.parse(savedWishlist) : [];
+      
+      // Map wishlist IDs to movie objects
+      const wishlistMovies = wishlistIds.map(id => {
+        const movie = movieDatabase[id];
+        if (!movie) return null;
+        
+        return {
+          ...movie,
+          dateAdded: new Date(Date.now()).toISOString() // Safe date creation
+        };
+      }).filter(movie => movie !== null);
+      
+      setWishlistItems(wishlistMovies);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
+      setWishlistItems([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const removeFromWishlist = (itemId) => {
-    setWishlistItems(prev => prev.filter(item => item.id !== itemId));
+  const removeFromWishlist = (movieId) => {
+    const savedWishlist = localStorage.getItem('movieWishlist');
+    const wishlistIds = savedWishlist ? JSON.parse(savedWishlist) : [];
+    const updatedWishlist = wishlistIds.filter(id => id !== movieId);
+    localStorage.setItem('movieWishlist', JSON.stringify(updatedWishlist));
+    
+    // Trigger storage event for real-time updates
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'movieWishlist',
+      newValue: JSON.stringify(updatedWishlist)
+    }));
   };
 
-  const sortItems = (items) => {
-    switch (sortBy) {
-      case 'title':
-        return [...items].sort((a, b) => a.title.localeCompare(b.title));
-      case 'rating':
-        return [...items].sort((a, b) => b.rating - a.rating);
-      case 'releaseDate':
-        return [...items].sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
-      case 'dateAdded':
-      default:
-        return [...items].sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-    }
+  const handleBookNow = (movieId) => {
+    navigate(`/book/${movieId}`);
   };
-
-  const filterItems = (items) => {
-    switch (filterBy) {
-      case 'now-showing':
-        return items.filter(item => item.status === 'now-showing');
-      case 'coming-soon':
-        return items.filter(item => item.status === 'coming-soon');
-      case 'ended':
-        return items.filter(item => item.status === 'ended');
-      case 'all':
-      default:
-        return items;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'now-showing': return 'text-green-600 bg-green-100';
-      case 'coming-soon': return 'text-blue-600 bg-blue-100';
-      case 'ended': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
-
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'now-showing': return 'Now Showing';
-      case 'coming-soon': return 'Coming Soon';
-      case 'ended': return 'Ended';
-      default: return 'Unknown';
-    }
-  };
-
-  const bookMovie = (movie) => {
-    navigate('/movies', { state: { selectedMovie: movie.movieId } });
-  };
-
-  const sortedAndFilteredItems = sortItems(filterItems(wishlistItems));
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-white">Loading your wishlist...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Wishlist</h1>
-              <p className="text-gray-600 mt-2">Keep track of movies you want to watch</p>
-            </div>
-            <button
-              onClick={() => navigate('/user/dashboard')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
-            >
-              ← Back to Dashboard
-            </button>
+    <div className="min-h-screen bg-gray-900">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-gray-800 to-gray-900 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent mb-4">
+              My Wishlist
+            </h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              Your favorite movies saved for later
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-pink-100">
-                <span className="text-pink-600 text-xl">❤️</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Movies</p>
-                <p className="text-2xl font-bold text-gray-900">{wishlistItems.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-green-100">
-                <span className="text-green-600 text-xl">🎬</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Now Showing</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {wishlistItems.filter(item => item.status === 'now-showing').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100">
-                <span className="text-blue-600 text-xl">🔜</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Coming Soon</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {wishlistItems.filter(item => item.status === 'coming-soon').length}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-yellow-100">
-                <span className="text-yellow-600 text-xl">⭐</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Avg Rating</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {wishlistItems.length > 0 
-                    ? (wishlistItems.reduce((sum, item) => sum + item.rating, 0) / wishlistItems.length).toFixed(1)
-                    : '0.0'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters and Sort */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
-                <select
-                  value={filterBy}
-                  onChange={(e) => setFilterBy(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Movies</option>
-                  <option value="now-showing">Now Showing</option>
-                  <option value="coming-soon">Coming Soon</option>
-                  <option value="ended">Ended</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="dateAdded">Date Added</option>
-                  <option value="title">Title</option>
-                  <option value="rating">Rating</option>
-                  <option value="releaseDate">Release Date</option>
-                </select>
-              </div>
-            </div>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {wishlistItems.length === 0 ? (
+          <div className="text-center py-16">
+            <HeartOutline className="h-24 w-24 text-gray-600 mx-auto mb-6" />
+            <h3 className="text-2xl font-semibold text-white mb-4">Your wishlist is empty</h3>
+            <p className="text-gray-400 mb-8">Start adding movies to your wishlist by clicking the heart icon on movie cards.</p>
             <button
               onClick={() => navigate('/movies')}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
-              + Add Movies
+              Browse Movies
             </button>
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="mb-6">
+              <p className="text-gray-400">
+                {wishlistItems.length} movie{wishlistItems.length !== 1 ? 's' : ''} in your wishlist
+              </p>
+            </div>
 
-        {/* Wishlist Items */}
-        <div className="space-y-6">
-          {sortedAndFilteredItems.length > 0 ? (
-            sortedAndFilteredItems.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="md:flex">
-                  <div className="md:w-48 h-64 md:h-auto bg-gray-300 flex items-center justify-center">
-                    <span className="text-gray-600">Movie Poster</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {wishlistItems.map((movie) => (
+                <div key={movie.id} className="bg-gray-800 rounded-xl overflow-hidden group hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-red-500/50">
+                  {/* Movie Poster */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={movie.poster}
+                      alt={movie.title}
+                      className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    
+                    {/* Remove from Wishlist */}
+                    <button
+                      onClick={() => removeFromWishlist(movie.id)}
+                      className="absolute top-4 right-4 p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-300"
+                    >
+                      <HeartSolid className="h-5 w-5" />
+                    </button>
+                    
+                    {/* Status Badge */}
+                    {movie.isNowShowing ? (
+                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        Now Showing
+                      </div>
+                    ) : (
+                      <div className="absolute top-4 left-4 bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-semibold">
+                        Coming Soon
+                      </div>
+                    )}
+                    
+                    {/* Rating */}
+                    <div className="absolute bottom-4 left-4 flex items-center bg-black/60 rounded-full px-3 py-1">
+                      <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
+                      <span className="text-white text-sm font-semibold">{movie.rating}</span>
+                    </div>
                   </div>
-                  <div className="flex-1 p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
-                          <span>{item.genre}</span>
-                          <span>•</span>
-                          <span>{item.duration} min</span>
-                          <span>•</span>
-                          <span>{item.language}</span>
-                        </div>
-                        <div className="flex items-center space-x-4 mb-3">
-                          <div className="flex items-center">
-                            <span className="text-yellow-500 mr-1">⭐</span>
-                            <span className="font-medium">{item.rating}</span>
-                          </div>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}>
-                            {getStatusText(item.status)}
-                          </span>
-                          {item.status === 'now-showing' && (
-                            <span className="text-sm text-green-600 font-medium">
-                              {item.availableShows} shows available
-                            </span>
-                          )}
-                        </div>
+                  
+                  {/* Movie Info */}
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">{movie.title}</h3>
+                    <p className="text-gray-400 text-sm mb-3">{movie.genre}</p>
+                    
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center">
+                        <ClockIcon className="h-4 w-4 mr-1" />
+                        <span>{movie.duration} min</span>
                       </div>
+                      <div className="flex items-center">
+                        <CalendarIcon className="h-4 w-4 mr-1" />
+                        <span>{new Date(movie.releaseDate).getFullYear()}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-2xl font-bold text-red-500">₹{movie.price}</span>
+                      <span className="text-gray-400 text-sm">{movie.language}</span>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    {movie.isNowShowing ? (
                       <button
-                        onClick={() => removeFromWishlist(item.id)}
-                        className="text-red-500 hover:text-red-700 p-2"
-                        title="Remove from wishlist"
+                        onClick={() => handleBookNow(movie.id)}
+                        className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-semibold transition-colors duration-300 flex items-center justify-center"
                       >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
+                        <FilmIcon className="h-5 w-5 mr-2" />
+                        Book Now
                       </button>
-                    </div>
-
-                    <p className="text-gray-700 mb-4 line-clamp-2">{item.description}</p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-600">
-                        <p><span className="font-medium">Director:</span> {item.director}</p>
-                        <p><span className="font-medium">Cast:</span> {item.cast.slice(0, 3).join(', ')}</p>
-                        <p><span className="font-medium">Added:</span> {new Date(item.dateAdded).toLocaleDateString()}</p>
-                      </div>
-                      
-                      <div className="flex space-x-3">
-                        {item.status === 'now-showing' ? (
-                          <button
-                            onClick={() => bookMovie(item)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                          >
-                            Book Now
-                          </button>
-                        ) : item.status === 'coming-soon' ? (
-                          <button className="bg-gray-400 text-white px-6 py-2 rounded-lg font-medium cursor-not-allowed">
-                            Coming Soon
-                          </button>
-                        ) : (
-                          <button className="bg-gray-400 text-white px-6 py-2 rounded-lg font-medium cursor-not-allowed">
-                            No Longer Available
-                          </button>
-                        )}
-                        <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors">
-                          Share
-                        </button>
-                      </div>
-                    </div>
+                    ) : (
+                      <button
+                        disabled
+                        className="w-full bg-gray-600 text-gray-400 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center"
+                      >
+                        <CalendarIcon className="h-5 w-5 mr-2" />
+                        Coming Soon
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-16">
-              <div className="text-gray-400 text-6xl mb-4">❤️</div>
-              <p className="text-gray-500 text-xl mb-2">Your wishlist is empty</p>
-              <p className="text-gray-400 mb-6">Browse movies and add them to your wishlist</p>
-              <button
-                onClick={() => navigate('/movies')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Browse Movies
-              </button>
+              ))}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

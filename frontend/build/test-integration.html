@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Booking Integration</title>
+</head>
+<body>
+    <h1>Test Booking Integration</h1>
+    
+    <h2>Create Test Booking</h2>
+    <button onclick="createTestBooking()">Create Test Booking</button>
+    
+    <h2>Current User</h2>
+    <div id="current-user"></div>
+    
+    <h2>All Bookings</h2>
+    <div id="all-bookings"></div>
+    
+    <h2>User Bookings</h2>
+    <div id="user-bookings"></div>
+    
+    <script>
+        function createTestBooking() {
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            
+            const testBooking = {
+                id: Date.now(),
+                userId: currentUser.id,
+                userEmail: currentUser.email,
+                userFirstName: currentUser.firstName || 'Test',
+                userLastName: currentUser.lastName || 'User',
+                movieTitle: 'Test Movie',
+                venueName: 'Test Venue',
+                showDate: '2025-10-18',
+                showTime: '18:00',
+                seats: [
+                    { seatNumber: 'A1', price: 250, type: 'REGULAR' }
+                ],
+                totalAmount: 250,
+                bookingDate: new Date().toISOString(),
+                status: 'CONFIRMED'
+            };
+            
+            const existingBookings = JSON.parse(localStorage.getItem('demoBookings') || '[]');
+            existingBookings.push(testBooking);
+            localStorage.setItem('demoBookings', JSON.stringify(existingBookings));
+            
+            // Dispatch event
+            window.dispatchEvent(new CustomEvent('bookingCreated', {
+                detail: testBooking
+            }));
+            
+            displayData();
+            alert('Test booking created!');
+        }
+        
+        function displayData() {
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const allBookings = JSON.parse(localStorage.getItem('demoBookings') || '[]');
+            const userBookings = allBookings.filter(booking => booking.userId === currentUser.id);
+            
+            document.getElementById('current-user').innerHTML = '<pre>' + JSON.stringify(currentUser, null, 2) + '</pre>';
+            document.getElementById('all-bookings').innerHTML = '<pre>' + JSON.stringify(allBookings, null, 2) + '</pre>';
+            document.getElementById('user-bookings').innerHTML = '<pre>' + JSON.stringify(userBookings, null, 2) + '</pre>';
+        }
+        
+        displayData();
+        setInterval(displayData, 1000);
+    </script>
+</body>
+</html>

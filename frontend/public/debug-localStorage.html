@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug localStorage</title>
+</head>
+<body>
+    <h1>localStorage Debug</h1>
+    <div id="output"></div>
+    
+    <script>
+        function debugLocalStorage() {
+            const output = document.getElementById('output');
+            
+            // Get userBookings
+            const userBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+            const userDashboardStats = JSON.parse(localStorage.getItem('userDashboardStats') || '{}');
+            
+            output.innerHTML = `
+                <h2>userBookings (${userBookings.length} items):</h2>
+                <pre>${JSON.stringify(userBookings, null, 2)}</pre>
+                
+                <h2>userDashboardStats:</h2>
+                <pre>${JSON.stringify(userDashboardStats, null, 2)}</pre>
+                
+                <h2>All localStorage keys:</h2>
+                <ul>
+                    ${Object.keys(localStorage).map(key => `<li>${key}: ${localStorage.getItem(key)?.substring(0, 100)}...</li>`).join('')}
+                </ul>
+            `;
+        }
+        
+        // Run on load
+        debugLocalStorage();
+        
+        // Refresh every 2 seconds
+        setInterval(debugLocalStorage, 2000);
+    </script>
+</body>
+</html>

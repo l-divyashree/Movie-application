@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, PencilIcon, TrashIcon, EyeIcon, CalendarIcon, ClockIcon } from '@heroicons/react/24/outline';
-import movieService from '../../services/movieService';
-import adminService from '../../services/adminService';
 
 const AdminMovieManagement = () => {
   const [movies, setMovies] = useState([]);
@@ -40,9 +38,14 @@ const AdminMovieManagement = () => {
   const loadMovies = async () => {
     try {
       setLoading(true);
-      const response = await movieService.getMovies({});
-      setMovies(response.content || []);
+      
+      // Load movies from localStorage first
+      const savedMovies = JSON.parse(localStorage.getItem('adminMovies') || '[]');
+      console.log('AdminMovieManagement - Loaded movies from localStorage:', savedMovies);
+      
+      setMovies(savedMovies);
     } catch (err) {
+      console.error('Error loading movies:', err);
       setError('Failed to load movies: ' + err.message);
     } finally {
       setLoading(false);
@@ -65,11 +68,32 @@ const AdminMovieManagement = () => {
         durationMinutes: parseInt(formData.durationMinutes) || 0
       };
 
+      // Get existing movies from localStorage
+      const existingMovies = JSON.parse(localStorage.getItem('adminMovies') || '[]');
+      
       if (editingMovie) {
-        await adminService.updateMovie(editingMovie.id, movieData);
+        // Update existing movie
+        const updatedMovies = existingMovies.map(movie => 
+          movie.id === editingMovie.id ? { ...movieData, id: editingMovie.id } : movie
+        );
+        localStorage.setItem('adminMovies', JSON.stringify(updatedMovies));
+        console.log('AdminMovieManagement - Updated movie:', movieData);
       } else {
-        await adminService.createMovie(movieData);
+        // Create new movie with unique ID
+        const newMovie = {
+          ...movieData,
+          id: Date.now() // Simple ID generation
+        };
+        const updatedMovies = [...existingMovies, newMovie];
+        localStorage.setItem('adminMovies', JSON.stringify(updatedMovies));
+        console.log('AdminMovieManagement - Created new movie:', newMovie);
       }
+      
+      // Trigger storage event for real-time updates
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'adminMovies',
+        newValue: localStorage.getItem('adminMovies')
+      }));
       
       resetForm();
       loadMovies();
@@ -102,7 +126,21 @@ const AdminMovieManagement = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this movie?')) {
       try {
-        await adminService.deleteMovie(id);
+        // Get existing movies from localStorage
+        const existingMovies = JSON.parse(localStorage.getItem('adminMovies') || '[]');
+        
+        // Filter out the deleted movie
+        const updatedMovies = existingMovies.filter(movie => movie.id !== id);
+        localStorage.setItem('adminMovies', JSON.stringify(updatedMovies));
+        
+        console.log('AdminMovieManagement - Deleted movie with ID:', id);
+        
+        // Trigger storage event for real-time updates
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'adminMovies',
+          newValue: localStorage.getItem('adminMovies')
+        }));
+        
         loadMovies();
       } catch (err) {
         setError(err.message);

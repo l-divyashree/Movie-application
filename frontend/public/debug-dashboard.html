@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug User Dashboard Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; }
+        .button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; max-height: 300px; }
+        .stats { background: #e8f5e8; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>User Dashboard Data Debug</h1>
+    
+    <div class="section">
+        <h2>Check Current Data</h2>
+        <button class="button" onclick="checkUserBookings()">Check User Bookings</button>
+        <button class="button" onclick="calculateStats()">Calculate Dashboard Stats</button>
+        <div id="bookingsResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Add Test Booking</h2>
+        <button class="button" onclick="addTestBooking()">Add Test Booking</button>
+        <div id="testResult"></div>
+    </div>
+
+    <script>
+        function checkUserBookings() {
+            const userBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+            const userDashboardStats = JSON.parse(localStorage.getItem('userDashboardStats') || '{}');
+            
+            const result = document.getElementById('bookingsResult');
+            
+            result.innerHTML = `
+                <h3>User Bookings (${userBookings.length} items):</h3>
+                <pre>${JSON.stringify(userBookings, null, 2)}</pre>
+                
+                <h3>User Dashboard Stats:</h3>
+                <pre>${JSON.stringify(userDashboardStats, null, 2)}</pre>
+            `;
+        }
+
+        function calculateStats() {
+            const userBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+            
+            let totalBookings = userBookings.length;
+            let totalSpent = 0;
+            let upcomingShows = 0;
+
+            // Calculate total spent
+            userBookings.forEach((booking, index) => {
+                console.log('Processing booking ' + index + ':', booking);
+                const amount = booking.totalAmount || 0;
+                totalSpent += amount;
+                console.log('Added amount ' + amount + ', running total: ' + totalSpent);
+            });
+
+            // Calculate upcoming shows
+            const now = new Date();
+            userBookings.forEach(booking => {
+                try {
+                    const showDateTime = new Date(booking.date + ' ' + booking.showTime);
+                    if (showDateTime > now) {
+                        upcomingShows++;
+                    }
+                } catch (err) {
+                    console.warn('Error parsing date for booking:', booking, err);
+                }
+            });
+
+            const stats = {
+                totalBookings: totalBookings,
+                upcomingShows: upcomingShows,
+                totalSpent: totalSpent
+            };
+
+            const result = document.getElementById('bookingsResult');
+            result.innerHTML += `
+                <div class="stats">
+                    <h3>Calculated Stats:</h3>
+                    <p><strong>Total Bookings:</strong> ${stats.totalBookings}</p>
+                    <p><strong>Upcoming Shows:</strong> ${stats.upcomingShows}</p>
+                    <p><strong>Total Spent:</strong> ₹${stats.totalSpent}</p>
+                </div>
+            `;
+
+            console.log('Calculated stats:', stats);
+        }
+
+        function addTestBooking() {
+            const testBooking = {
+                id: Date.now(),
+                movieTitle: "Test Movie",
+                movieId: 1,
+                date: "2025-12-01",
+                showTime: "19:30",
+                venue: "Test Cinema",
+                seats: ["A1", "A2"],
+                totalAmount: 600,
+                bookingDate: new Date().toISOString(),
+                status: "CONFIRMED"
+            };
+
+            const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+            existingBookings.push(testBooking);
+            localStorage.setItem('userBookings', JSON.stringify(existingBookings));
+
+            // Also update dashboard stats
+            const currentStats = {
+                totalBookings: existingBookings.length,
+                totalSpent: existingBookings.reduce((sum, booking) => sum + (booking.totalAmount || 0), 0),
+                upcomingShows: existingBookings.filter(booking => {
+                    const showDate = new Date(booking.date + ' ' + booking.showTime);
+                    return showDate > new Date();
+                }).length
+            };
+
+            localStorage.setItem('userDashboardStats', JSON.stringify(currentStats));
+
+            // Trigger storage events
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'userBookings',
+                newValue: localStorage.getItem('userBookings')
+            }));
+
+            window.dispatchEvent(new CustomEvent('bookingUpdate', {
+                detail: { bookings: existingBookings, stats: currentStats }
+            }));
+
+            document.getElementById('testResult').innerHTML = `
+                <div style="background: green; color: white; padding: 10px;">
+                    ✅ Test booking added! Total bookings: ${existingBookings.length}, Total spent: ₹${currentStats.totalSpent}
+                </div>
+            `;
+
+            console.log('Added test booking:', testBooking);
+            console.log('Updated stats:', currentStats);
+        }
+
+        // Auto-check on load
+        window.onload = () => {
+            checkUserBookings();
+        };
+    </script>
+</body>
+</html>

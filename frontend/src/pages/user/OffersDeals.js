@@ -126,7 +126,7 @@ const OffersDeals = () => {
     alert(`Promo code ${code} copied to clipboard!`);
   };
 
-  const useOffer = (offer) => {
+  const handleUseOffer = (offer) => {
     // Navigate to movies page with the promo code pre-applied
     navigate('/movies', { state: { promoCode: offer.code } });
   };
@@ -194,7 +194,7 @@ const OffersDeals = () => {
           {offer.status === 'active' ? (
             <>
               <button
-                onClick={() => useOffer(offer)}
+                onClick={() => handleUseOffer(offer)}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
               >
                 Use Offer

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Movies Integration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Movies Integration Debug</h1>
+    
+    <div class="section">
+        <h2>Current localStorage Data</h2>
+        <button class="button" onclick="checkLocalStorage()">Check localStorage</button>
+        <div id="localStorageResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Seed Admin Movies</h2>
+        <button class="button" onclick="seedMovies()">Seed Sample Movies</button>
+        <div id="seedResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Clear All Data</h2>
+        <button class="button" onclick="clearAll()">Clear All localStorage</button>
+        <div id="clearResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Manual Navigation Test</h2>
+        <button class="button" onclick="goToMovies()">Navigate to /movies</button>
+        <button class="button" onclick="refreshPage()">Hard Refresh</button>
+    </div>
+
+    <script>
+        function checkLocalStorage() {
+            const adminMovies = JSON.parse(localStorage.getItem('adminMovies') || '[]');
+            const result = document.getElementById('localStorageResult');
+            
+            result.innerHTML = `
+                <h3>adminMovies (${adminMovies.length} items):</h3>
+                <pre>${JSON.stringify(adminMovies, null, 2)}</pre>
+                
+                <h3>All localStorage keys:</h3>
+                <ul>
+                    ${Object.keys(localStorage).map(key => `<li><strong>${key}</strong>: ${localStorage.getItem(key).substring(0, 50)}...</li>`).join('')}
+                </ul>
+            `;
+        }
+
+        function seedMovies() {
+            const sampleMovies = [
+                {
+                    id: 1,
+                    title: 'Avengers: Endgame',
+                    description: 'The epic conclusion to the Infinity Saga',
+                    genre: 'Action',
+                    language: 'English',
+                    durationMinutes: 181,
+                    rating: 'PG-13',
+                    releaseDate: '2024-04-26',
+                    director: 'Russo Brothers',
+                    cast: 'Robert Downey Jr., Chris Evans, Scarlett Johansson',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=TcMBFSGVi1c',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                },
+                {
+                    id: 2,
+                    title: 'Spider-Man: No Way Home',
+                    description: 'Peter Parker faces his greatest challenge yet',
+                    genre: 'Action',
+                    language: 'English',
+                    durationMinutes: 148,
+                    rating: 'PG-13',
+                    releaseDate: '2024-12-17',
+                    director: 'Jon Watts',
+                    cast: 'Tom Holland, Zendaya, Benedict Cumberbatch',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=JfVOs4VSpmA',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                },
+                {
+                    id: 3,
+                    title: 'The Batman',
+                    description: 'A new take on the Dark Knight',
+                    genre: 'Action',
+                    language: 'English',
+                    durationMinutes: 176,
+                    rating: 'PG-13',
+                    releaseDate: '2024-03-04',
+                    director: 'Matt Reeves',
+                    cast: 'Robert Pattinson, Zoë Kravitz, Paul Dano',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/b0PlSFdDwbyK0cf5RxwDpaOJQvQ.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=mqqft2x_Aa4',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                },
+                {
+                    id: 4,
+                    title: 'Top Gun: Maverick',
+                    description: 'Maverick returns to the danger zone',
+                    genre: 'Action',
+                    language: 'English',
+                    durationMinutes: 131,
+                    rating: 'PG-13',
+                    releaseDate: '2024-05-27',
+                    director: 'Joseph Kosinski',
+                    cast: 'Tom Cruise, Miles Teller, Jennifer Connelly',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=qSqVVswa420',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                },
+                {
+                    id: 5,
+                    title: 'Dune: Part Two',
+                    description: 'Paul Atreides unites with Chani and the Fremen',
+                    genre: 'Sci-Fi',
+                    language: 'English',
+                    durationMinutes: 166,
+                    rating: 'PG-13',
+                    releaseDate: '2024-03-01',
+                    director: 'Denis Villeneuve',
+                    cast: 'Timothée Chalamet, Zendaya, Rebecca Ferguson',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=Way9Dexny3w',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                },
+                {
+                    id: 6,
+                    title: 'Deadpool & Wolverine',
+                    description: 'The Merc with the Mouth meets the Wolverine',
+                    genre: 'Comedy',
+                    language: 'English',
+                    durationMinutes: 128,
+                    rating: 'R',
+                    releaseDate: '2024-07-26',
+                    director: 'Shawn Levy',
+                    cast: 'Ryan Reynolds, Hugh Jackman',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=73_1biulkYk',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                },
+                {
+                    id: 7,
+                    title: 'Inside Out 2',
+                    description: 'Return to the mind of Riley as she navigates new emotions',
+                    genre: 'Animation',
+                    language: 'English',
+                    durationMinutes: 96,
+                    rating: 'PG',
+                    releaseDate: '2024-06-14',
+                    director: 'Kelsey Mann',
+                    cast: 'Amy Poehler, Phyllis Smith, Lewis Black',
+                    posterUrl: 'https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg',
+                    trailerUrl: 'https://www.youtube.com/watch?v=LEjhY15eCx0',
+                    isNowShowing: true,
+                    isComingSoon: false,
+                    isActive: true
+                }
+            ];
+
+            localStorage.setItem('adminMovies', JSON.stringify(sampleMovies));
+            
+            // Trigger storage event
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'adminMovies',
+                newValue: localStorage.getItem('adminMovies')
+            }));
+
+            document.getElementById('seedResult').innerHTML = `
+                <div style="background: green; color: white; padding: 10px;">
+                    ✅ ${sampleMovies.length} movies seeded successfully!
+                </div>
+            `;
+
+            console.log('Movies seeded:', sampleMovies);
+        }
+
+        function clearAll() {
+            localStorage.clear();
+            document.getElementById('clearResult').innerHTML = `
+                <div style="background: orange; color: white; padding: 10px;">
+                    ⚠️ All localStorage data cleared!
+                </div>
+            `;
+        }
+
+        function goToMovies() {
+            window.location.href = '/movies';
+        }
+
+        function refreshPage() {
+            window.location.reload(true);
+        }
+
+        // Auto-check on load
+        window.onload = () => {
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>

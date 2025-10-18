@@ -77,19 +77,19 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-neutral-900 text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <span className="text-4xl">🎬</span>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-red-500">
           Sign in to your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-neutral-300">
           Or{' '}
           <Link
             to="/register"
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-red-400 hover:text-red-300"
           >
             create a new account
           </Link>
@@ -97,7 +97,7 @@ const Login = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-neutral-800/60 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-neutral-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {errors.submit && (
               <div className="rounded-md bg-red-50 p-4">
@@ -112,7 +112,7 @@ const Login = () => {
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-300">
                 Email address
               </label>
               <div className="mt-1">
@@ -125,6 +125,7 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className={`input ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Enter your email"
                 />
                 {errors.email && (
@@ -134,7 +135,7 @@ const Login = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-neutral-300">
                 Password
               </label>
               <div className="mt-1">
@@ -147,6 +148,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`input ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Enter your password"
                 />
                 {errors.password && (
@@ -161,9 +163,9 @@ const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-neutral-300">
                   Remember me
                 </label>
               </div>
@@ -179,7 +181,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-red-600 hover:bg-red-700 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -206,9 +208,9 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-md p-4">
-              <h4 className="text-sm font-medium text-blue-800 mb-2">Test Accounts:</h4>
-              <div className="text-xs text-blue-700 space-y-1">
+            <div className="mt-6 bg-neutral-800/30 border border-neutral-700 rounded-md p-4">
+              <h4 className="text-sm font-medium text-neutral-300 mb-2">Test Accounts:</h4>
+              <div className="text-xs text-neutral-300 space-y-1">
                 <div><strong>Admin:</strong> admin@moviebook.com / password123</div>
                 <div><strong>User:</strong> user@moviebook.com / password123</div>
               </div>

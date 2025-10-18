@@ -97,13 +97,20 @@ const Payment = () => {
       if (response.ok) {
         const result = await response.json();
         
-        // Navigate to booking confirmation with booking details
-        navigate('/booking-confirmation', {
-          state: {
-            booking: result,
-            paymentMethod: paymentMethod
-          }
-        });
+        // Save booking to localStorage for dashboard updates
+        const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+        existingBookings.push(result);
+        localStorage.setItem('userBookings', JSON.stringify(existingBookings));
+        
+        // Update dashboard statistics
+        const stats = JSON.parse(localStorage.getItem('userDashboardStats') || '{}');
+        stats.totalBookings = (stats.totalBookings || 0) + 1;
+        stats.totalSpent = (stats.totalSpent || 0) + (result.totalAmount || 0);
+        stats.upcomingShows = (stats.upcomingShows || 0) + 1;
+        localStorage.setItem('userDashboardStats', JSON.stringify(stats));
+        
+        // Navigate directly to user dashboard
+        navigate('/user/dashboard');
       } else {
         const error = await response.json();
         setErrors({ general: error.message || 'Payment failed. Please try again.' });

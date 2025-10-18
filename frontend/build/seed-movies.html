@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seed Admin Movies</title>
+</head>
+<body>
+    <h1>Seed Admin Movies</h1>
+    <p>Click the button below to add sample movies to localStorage:</p>
+    <button onclick="seedMovies()">Seed Movies</button>
+    <div id="result"></div>
+    
+    <script>
+function seedMovies() {
+// Sample admin movies for testing
+const sampleMovies = [
+  {
+    id: 1,
+    title: 'Avengers: Endgame',
+    description: 'The epic conclusion to the Infinity Saga',
+    genre: 'Action',
+    language: 'English',
+    durationMinutes: 181,
+    rating: 'PG-13',
+    releaseDate: '2024-04-26',
+    director: 'Russo Brothers',
+    cast: 'Robert Downey Jr., Chris Evans, Scarlett Johansson',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg',
+    trailerUrl: 'https://www.youtube.com/watch?v=TcMBFSGVi1c',
+    isNowShowing: true,
+    isComingSoon: false,
+    isActive: true
+  },
+  {
+    id: 2,
+    title: 'Spider-Man: No Way Home',
+    description: 'Peter Parker faces his greatest challenge yet',
+    genre: 'Action',
+    language: 'English',
+    durationMinutes: 148,
+    rating: 'PG-13',
+    releaseDate: '2024-12-17',
+    director: 'Jon Watts',
+    cast: 'Tom Holland, Zendaya, Benedict Cumberbatch',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg',
+    trailerUrl: 'https://www.youtube.com/watch?v=JfVOs4VSpmA',
+    isNowShowing: true,
+    isComingSoon: false,
+    isActive: true
+  },
+  {
+    id: 3,
+    title: 'The Batman',
+    description: 'A new take on the Dark Knight',
+    genre: 'Action',
+    language: 'English',
+    durationMinutes: 176,
+    rating: 'PG-13',
+    releaseDate: '2024-03-04',
+    director: 'Matt Reeves',
+    cast: 'Robert Pattinson, Zoë Kravitz, Paul Dano',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/b0PlSFdDwbyK0cf5RxwDpaOJQvQ.jpg',
+    trailerUrl: 'https://www.youtube.com/watch?v=mqqft2x_Aa4',
+    isNowShowing: true,
+    isComingSoon: false,
+    isActive: true
+  },
+  {
+    id: 4,
+    title: 'Top Gun: Maverick',
+    description: 'Maverick returns to the danger zone',
+    genre: 'Action',
+    language: 'English',
+    durationMinutes: 131,
+    rating: 'PG-13',
+    releaseDate: '2024-05-27',
+    director: 'Joseph Kosinski',
+    cast: 'Tom Cruise, Miles Teller, Jennifer Connelly',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/62HCnUTziyWcpDaBO2i1DX17ljH.jpg',
+    trailerUrl: 'https://www.youtube.com/watch?v=qSqVVswa420',
+    isNowShowing: true,
+    isComingSoon: false,
+    isActive: true
+  },
+  {
+    id: 5,
+    title: 'Dune: Part Two',
+    description: 'Paul Atreides unites with Chani and the Fremen',
+    genre: 'Sci-Fi',
+    language: 'English',
+    durationMinutes: 166,
+    rating: 'PG-13',
+    releaseDate: '2024-03-01',
+    director: 'Denis Villeneuve',
+    cast: 'Timothée Chalamet, Zendaya, Rebecca Ferguson',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
+    trailerUrl: 'https://www.youtube.com/watch?v=Way9Dexny3w',
+    isNowShowing: true,
+    isComingSoon: false,
+    isActive: true
+  }
+];
+
+// Save to localStorage
+localStorage.setItem('adminMovies', JSON.stringify(sampleMovies));
+console.log('Sample admin movies saved to localStorage:', sampleMovies);
+
+// Trigger storage event
+window.dispatchEvent(new StorageEvent('storage', {
+  key: 'adminMovies',
+  newValue: localStorage.getItem('adminMovies')
+}));
+
+console.log('Movies seeded successfully! Refresh the Movies page to see them.');
+
+// Update UI
+document.getElementById('result').innerHTML = `
+    <div style="background: green; color: white; padding: 10px; margin: 10px 0;">
+        ✅ Movies seeded successfully! ${sampleMovies.length} movies added.<br>
+        Refresh the Movies page to see them.
+    </div>
+`;
+}
+</script>
+</body>
+</html>

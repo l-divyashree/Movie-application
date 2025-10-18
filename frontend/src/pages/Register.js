@@ -110,16 +110,16 @@ const Register = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-neutral-900 text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center">
+          <div className="bg-neutral-800/60 py-8 px-4 shadow sm:rounded-lg sm:px-10 text-center border border-neutral-700">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Account Created Successfully!</h3>
-            <p className="text-gray-600">Redirecting to login page...</p>
+            <h3 className="text-lg font-medium text-white mb-2">Account Created Successfully!</h3>
+            <p className="text-neutral-300">Redirecting to login page...</p>
           </div>
         </div>
       </div>
@@ -127,19 +127,19 @@ const Register = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-neutral-900 text-white flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <span className="text-4xl">🎬</span>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-red-500">
           Create your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
+        <p className="mt-2 text-center text-sm text-neutral-300">
           Or{' '}
           <Link
             to="/login"
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-red-400 hover:text-red-300"
           >
             sign in to your existing account
           </Link>
@@ -147,7 +147,7 @@ const Register = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-neutral-800/60 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-neutral-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {errors.submit && (
               <div className="rounded-md bg-red-50 p-4">
@@ -175,6 +175,7 @@ const Register = () => {
                   value={formData.name}
                   onChange={handleChange}
                   className={`input ${errors.name ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Enter your full name"
                 />
                 {errors.name && (
@@ -197,6 +198,7 @@ const Register = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className={`input ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Enter your email"
                 />
                 {errors.email && (
@@ -218,6 +220,7 @@ const Register = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   className={`input ${errors.phone ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Enter your phone number"
                 />
                 {errors.phone && (
@@ -240,6 +243,7 @@ const Register = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`input ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Create a password"
                 />
                 {errors.password && (
@@ -262,6 +266,7 @@ const Register = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className={`input ${errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  style={{ background: '#f8fafc' }}
                   placeholder="Confirm your password"
                 />
                 {errors.confirmPassword && (
@@ -276,9 +281,9 @@ const Register = () => {
                 name="terms"
                 type="checkbox"
                 required
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="terms" className="ml-2 block text-sm text-neutral-300">
                 I agree to the{' '}
                 <a href="/terms" className="text-blue-600 hover:text-blue-500">
                   Terms of Service
@@ -294,7 +299,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-red-600 hover:bg-red-700 w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

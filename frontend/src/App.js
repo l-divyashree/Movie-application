@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Movies from './pages/Movies';
 import MovieDetail from './pages/MovieDetail';
+import BookMovie from './pages/BookMovie';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserDashboard from './pages/user/UserDashboard';
 import MyBookingsEnhanced from './pages/user/MyBookingsEnhanced';
@@ -128,7 +129,7 @@ function App() {
               {/* Booking Flow Routes */}
               <Route path="/book/:movieId" element={
                 <ProtectedRoute>
-                  <ShowSelection />
+                  <BookMovie />
                 </ProtectedRoute>
               } />
               <Route path="/movies/:id/shows" element={
