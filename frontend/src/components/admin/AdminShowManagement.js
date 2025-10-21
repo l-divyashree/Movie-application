@@ -24,33 +24,6 @@ const AdminShowManagement = () => {
     isActive: true
   });
 
-  // Load initial data (hoisted function so it's safe to call from effects and handlers)
-  async function loadInitialData() {
-    try {
-      setLoading(true);
-      const [showsData, moviesData, venuesData] = await Promise.all([
-        adminService.getShows(),
-        movieService.getMovies({}),
-        adminService.getVenues()
-      ]);
-
-      const showsList = (showsData && showsData.content) || [];
-      setShows(showsList);
-      setMovies((moviesData && moviesData.content) || []);
-      setVenues(venuesData || []);
-
-      // Sync shows to localStorage for BookMovie component
-      syncShowsToLocalStorage(showsList);
-    } catch (err) {
-      setError('Failed to load data: ' + (err && err.message ? err.message : err));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
 
   // Sync shows to localStorage for BookMovie component
   const syncShowsToLocalStorage = (showsList) => {
@@ -88,6 +61,32 @@ const AdminShowManagement = () => {
     }
   };
 
+  const loadInitialData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [showsData, moviesData, venuesData] = await Promise.all([
+        adminService.getShows(),
+        movieService.getMovies({}),
+        adminService.getVenues()
+      ]);
+      
+      const showsList = showsData.content || [];
+      setShows(showsList);
+      setMovies(moviesData.content || []);
+      setVenues(venuesData || []);
+      
+      // Sync shows to localStorage for BookMovie component
+      syncShowsToLocalStorage(showsList);
+    } catch (err) {
+      setError('Failed to load data: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

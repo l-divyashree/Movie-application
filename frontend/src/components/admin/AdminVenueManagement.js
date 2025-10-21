@@ -23,10 +23,6 @@ const AdminVenueManagement = () => {
     isActive: true
   });
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
   const loadInitialData = async () => {
     try {
       setLoading(true);
@@ -43,6 +39,10 @@ const AdminVenueManagement = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

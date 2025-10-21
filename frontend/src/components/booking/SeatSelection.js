@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import accessibleIcon from '../../assets/icons/accessible.svg';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   CalendarIcon, 
@@ -44,43 +43,14 @@ const SeatSelection = () => {
   const loadSeats = async () => {
     try {
       setLoading(true);
-      // Try API first
-      let seatsData = [];
-      try {
-        const response = await fetch(`${API_BASE_URL}/seats/show/${showId}`);
-        if (response.ok) {
-          seatsData = await response.json();
-        } else {
-          console.warn('Seat API unavailable, falling back to admin-saved layout');
-        }
-      } catch (apiErr) {
-        console.warn('Seat API error, falling back to admin-saved layout', apiErr);
+      const response = await fetch(`${API_BASE_URL}/seats/show/${showId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch seats');
       }
-
-      // If API didn't return seats, try admin saved layout in localStorage
-      if (!seatsData || seatsData.length === 0) {
-        const adminLayouts = JSON.parse(localStorage.getItem('adminSeatLayouts') || '{}');
-        const key = show?.venue?.id && show?.screenId ? `${show.venue.id}:${show.screenId}` : null;
-        if (key && adminLayouts[key]) {
-          // Convert admin layout (rows of seats) into flat seats array expected by SeatSelection
-          const adminLayout = adminLayouts[key];
-          seatsData = [];
-          adminLayout.forEach(row => {
-            row.forEach(seat => {
-              seatsData.push({
-                id: seat.id,
-                seatRow: seat.rowLetter,
-                seatNumber: seat.seatNumber,
-                seatType: seat.type === 'premium' ? 'PREMIUM' : 'STANDARD',
-                isAvailable: seat.isAvailable,
-                isAccessible: seat.isAccessible || false
-              });
-            });
-          });
-        }
-      }
-
-      setSeats(seatsData || []);
+      
+      const seatsData = await response.json();
+      setSeats(seatsData);
     } catch (err) {
       console.error('Error loading seats:', err);
       setError('Failed to load seat layout');
@@ -163,42 +133,29 @@ const SeatSelection = () => {
 
   const getSeatStatusClass = (seat) => {
     const isSelected = selectedSeats.some(s => s.id === seat.id);
-    // Determine booked state by caller (isBooked may be present in seat arg)
-    const isBooked = seat.isBooked || seat.status === 'BOOKED';
-
-    if (isBooked) {
-      // Booked seats use strong red to match theme
-      return 'bg-red-700 text-white border-red-800 cursor-not-allowed';
-    }
-
+    
     if (!seat.isAvailable) {
-      return 'bg-gray-600 text-white cursor-not-allowed border-gray-500';
+      return 'bg-red-500 cursor-not-allowed';
     }
-
+    
     if (seat.isBlocked && !reservedSeats.includes(seat.id)) {
       return 'bg-orange-400 cursor-not-allowed';
     }
-
+    
     if (isSelected) {
-      return 'bg-red-600 text-white border-red-700';
+      return 'bg-green-500 text-white';
     }
-
-    // Accessible seats (disabled section) should be clearly visible with dark background and green accent
-    if (seat.isAccessible) {
-      return 'bg-gray-900 text-white border-green-600 hover:bg-gray-800';
-    }
-
-    // Available seat - color by type (match red/black theme)
+    
+    // Available seat - color by type
     switch (seat.seatType) {
       case 'PREMIUM':
-        // Premium seats are black with white text per request
-        return 'bg-gray-900 text-white border-gray-800 hover:bg-gray-800';
+        return 'bg-purple-200 hover:bg-purple-300 border-purple-400';
       case 'STANDARD':
-        return 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700';
+        return 'bg-blue-200 hover:bg-blue-300 border-blue-400';
       case 'ECONOMY':
-        return 'bg-gray-700 text-white border-gray-600 hover:bg-gray-600';
+        return 'bg-gray-200 hover:bg-gray-300 border-gray-400';
       default:
-        return 'bg-gray-800 text-white border-gray-700 hover:bg-gray-700';
+        return 'bg-gray-200 hover:bg-gray-300 border-gray-400';
     }
   };
 
@@ -370,14 +327,6 @@ Total: ₹${bookingData.totalAmount}`);
   const groupedSeats = groupSeatsByRow(seats);
   const rows = Object.keys(groupedSeats).sort();
 
-  // Compute booked seats from localStorage once per render
-  const demoBookings = JSON.parse(localStorage.getItem('demoBookings') || '[]');
-  const userBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-  const allBookedSeatIds = new Set();
-  [...demoBookings, ...userBookings].forEach(bk => {
-    (bk.seats || []).forEach(s => allBookedSeatIds.add(s.id || s));
-  });
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -427,27 +376,23 @@ Total: ₹${bookingData.totalAmount}`);
                 <p className="text-sm text-gray-500">All eyes this way please!</p>
               </div>
 
-              {/* Legend (red/black theme) */}
+              {/* Legend */}
               <div className="flex flex-wrap justify-center space-x-6 mb-6 text-sm">
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-gray-800 border border-gray-700 rounded"></div>
+                  <div className="w-4 h-4 bg-gray-200 border border-gray-400 rounded"></div>
                   <span>Available</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-red-600 rounded"></div>
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
                   <span>Selected</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-red-800 rounded"></div>
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
                   <span>Booked</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                  <div className="w-4 h-4 bg-orange-400 rounded"></div>
                   <span>Reserved</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 bg-gray-900 border border-red-600 rounded flex items-center justify-center text-white text-[10px]">♿</div>
-                  <span>Accessible</span>
                 </div>
               </div>
 
@@ -471,43 +416,23 @@ Total: ₹${bookingData.totalAmount}`);
                           {groupedSeats[row].map((seat, index) => {
                             // Add gap in the middle for aisle
                             const showAisle = index === Math.floor(groupedSeats[row].length / 2);
-                            const isBooked = allBookedSeatIds.has(seat.id) || seat.isBooked || seat.status === 'BOOKED';
-                            const disabled = isBooked || !seat.isAvailable || (seat.isBlocked && !reservedSeats.includes(seat.id));
                             
                             return (
                               <React.Fragment key={seat.id}>
                                 {showAisle && <div className="w-4"></div>}
                                 <button
                                   onClick={() => handleSeatClick(seat)}
-                                  disabled={disabled}
-                                  aria-label={`${seat.displayName || seat.seatRow + seat.seatNumber} - ${seat.seatType} - ${seat.isAccessible ? 'Accessible' : 'Standard'}`}
+                                  disabled={!seat.isAvailable || (seat.isBlocked && !reservedSeats.includes(seat.id))}
                                   className={`
-                                    w-10 h-8 rounded border text-xs font-medium transition-all duration-200 flex items-center justify-center px-1
-                                    ${getSeatStatusClass({ ...seat, isBooked })}
-                                    ${disabled ? '' : 'cursor-pointer transform hover:scale-105'}
+                                    w-8 h-8 rounded border text-xs font-medium transition-all duration-200
+                                    ${getSeatStatusClass(seat)}
+                                    ${!seat.isAvailable || (seat.isBlocked && !reservedSeats.includes(seat.id)) 
+                                      ? '' : 'cursor-pointer transform hover:scale-105'
+                                    }
                                   `}
                                   title={`${seat.displayName || seat.seatRow + seat.seatNumber} - ${seat.seatType} - ₹${seat.price || 0}`}
                                 >
-                                  <div className="flex items-center space-x-1">
-                                    {/* If seat is disabled show lock icon */}
-                                    {(!seat.isAvailable || seat.isBlocked) ? (
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M5 8V6a5 5 0 0110 0v2h1a1 1 0 011 1v7a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1h1zm2 0h6V6a3 3 0 00-6 0v2z" />
-                                      </svg>
-                                    ) : null}
-
-                                    <span className="text-xs">{seat.seatNumber}</span>
-
-                                    {/* Premium seats: no icon per request; visual handled via color */}
-
-                                    {/* Accessible badge */}
-                                      {seat.isAccessible && (
-                                        <img src={accessibleIcon} alt="accessible" className="h-4 w-4 object-contain ml-1" />
-                                      )}
-
-                                    {/* Booked marker */}
-                                    {isBooked && <span className="ml-1 text-[10px] font-semibold">B</span>}
-                                  </div>
+                                  {seat.seatNumber}
                                 </button>
                               </React.Fragment>
                             );

@@ -7,8 +7,8 @@ import AdminUserManagement from '../../components/admin/AdminUserManagement';
 import AdminVenueManagement from '../../components/admin/AdminVenueManagement';
 import AdminSeatManagement from '../../components/admin/AdminSeatManagement';
 import AdminBookingManagement from '../../components/admin/AdminBookingManagement';
-import adminService from '../../services/adminService';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
+import adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
   const { user, isAdmin, logout } = useAuth();
@@ -239,11 +239,7 @@ const AdminDashboard = () => {
         {activeTab === 'users' && <AdminUserManagement />}
         {activeTab === 'venues' && <AdminVenueManagement />}
         {activeTab === 'seats' && <AdminSeatManagement />}
-        {activeTab === 'analytics' && (
-          <div className="mt-6">
-            <AdminAnalytics />
-          </div>
-        )}
+        {activeTab === 'analytics' && <AdminAnalytics />}
       </div>
     </div>
   );

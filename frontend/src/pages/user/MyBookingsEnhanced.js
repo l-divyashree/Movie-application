@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import bookingService from '../../services/bookingService';
 
 const MyBookings = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -82,10 +80,10 @@ const MyBookings = () => {
             id: booking.movieId || 1, 
             title: booking.movieTitle,
             posterUrl: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
-              duration: 150,
-              genre: 'Action',
-              rating: 'PG-13'
-            },
+            duration: 150,
+            genre: 'Action',
+            rating: 'PG-13'
+          },
           venue: { 
             id: 1, 
             name: booking.venue || 'CinemaFlix IMAX',

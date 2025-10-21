@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   HeartIcon as HeartSolid,
   StarIcon,
-  CalendarIcon,
   ClockIcon,
   FilmIcon
 } from '@heroicons/react/24/solid';
@@ -14,88 +13,28 @@ const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock movie data to match with wishlist IDs
-  const movieDatabase = {
-    1: {
-      id: 1,
-      title: 'Dune: Part Two',
-      genre: 'Sci-Fi, Adventure',
-      language: 'English',
-      rating: 8.5,
-      duration: 166,
-      releaseDate: '2024-03-01',
-      poster: 'https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg',
-      isNowShowing: true,
-      price: 350
-    },
-    2: {
-      id: 2,
-      title: 'Godzilla x Kong: The New Empire',
-      genre: 'Action, Adventure',
-      language: 'English',
-      rating: 6.4,
-      duration: 115,
-      releaseDate: '2024-03-29',
-      poster: 'https://image.tmdb.org/t/p/w500/gmGK92wI1dwI5F1kmrvCRzKRGAJ.jpg',
-      isNowShowing: true,
-      price: 300
-    },
-    3: {
-      id: 3,
-      title: 'Deadpool & Wolverine',
-      genre: 'Action, Comedy',
-      language: 'English',
-      rating: 7.8,
-      duration: 128,
-      releaseDate: '2024-07-26',
-      poster: 'https://image.tmdb.org/t/p/w500/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg',
-      isNowShowing: true,
-      price: 400
-    },
-    4: {
-      id: 4,
-      title: 'Inside Out 2',
-      genre: 'Animation, Family',
-      language: 'English',
-      rating: 7.6,
-      duration: 96,
-      releaseDate: '2024-06-14',
-      poster: 'https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg',
-      isNowShowing: true,
-      price: 250
-    },
-    5: {
-      id: 5,
-      title: 'Transformers One',
-      genre: 'Animation, Action',
-      language: 'English',
-      rating: 7.9,
-      duration: 104,
-      releaseDate: '2024-09-20',
-      poster: 'https://image.tmdb.org/t/p/w500/qbkAqmmEIZfrCO8ZQAuIuVMlWoV.jpg',
-      isNowShowing: false,
-      price: 320
-    },
-    6: {
-      id: 6,
-      title: 'The Wild Robot',
-      genre: 'Animation, Family',
-      language: 'English',
-      rating: 8.3,
-      duration: 102,
-      releaseDate: '2024-09-27',
-      poster: 'https://image.tmdb.org/t/p/w500/wTnV3PCVW5O92JMrFvvrRcV39RU.jpg',
-      isNowShowing: true,
-      price: 280
+  const fetchWishlist = useCallback(() => {
+    try {
+      setLoading(true);
+      
+      // Get wishlist from localStorage (full movie objects, not just IDs)
+      const savedWishlist = localStorage.getItem('wishlist');
+      const wishlistMovies = savedWishlist ? JSON.parse(savedWishlist) : [];
+      setWishlistItems(wishlistMovies);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+      setWishlistItems([]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchWishlist();
     
     // Listen for storage changes to update wishlist in real-time
     const handleStorageChange = (e) => {
-      if (e.key === 'movieWishlist') {
+      if (e.key === 'wishlist') {
         fetchWishlist();
       }
     };
@@ -105,45 +44,20 @@ const Wishlist = () => {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
-
-  const fetchWishlist = () => {
-    try {
-      setLoading(true);
-      
-      // Get wishlist IDs from localStorage
-      const savedWishlist = localStorage.getItem('movieWishlist');
-      const wishlistIds = savedWishlist ? JSON.parse(savedWishlist) : [];
-      
-      // Map wishlist IDs to movie objects
-      const wishlistMovies = wishlistIds.map(id => {
-        const movie = movieDatabase[id];
-        if (!movie) return null;
-        
-        return {
-          ...movie,
-          dateAdded: new Date(Date.now()).toISOString() // Safe date creation
-        };
-      }).filter(movie => movie !== null);
-      
-      setWishlistItems(wishlistMovies);
-    } catch (error) {
-      console.error('Error fetching wishlist:', error);
-      setWishlistItems([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchWishlist]);
 
   const removeFromWishlist = (movieId) => {
-    const savedWishlist = localStorage.getItem('movieWishlist');
-    const wishlistIds = savedWishlist ? JSON.parse(savedWishlist) : [];
-    const updatedWishlist = wishlistIds.filter(id => id !== movieId);
-    localStorage.setItem('movieWishlist', JSON.stringify(updatedWishlist));
+    const savedWishlist = localStorage.getItem('wishlist');
+    const wishlistMovies = savedWishlist ? JSON.parse(savedWishlist) : [];
+    const updatedWishlist = wishlistMovies.filter(movie => movie.id !== movieId);
+    localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+    
+    // Update local state immediately
+    setWishlistItems(updatedWishlist);
     
     // Trigger storage event for real-time updates
     window.dispatchEvent(new StorageEvent('storage', {
-      key: 'movieWishlist',
+      key: 'wishlist',
       newValue: JSON.stringify(updatedWishlist)
     }));
   };
@@ -200,82 +114,94 @@ const Wishlist = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {wishlistItems.map((movie) => (
-                <div key={movie.id} className="bg-gray-800 rounded-xl overflow-hidden group hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-red-500/50">
+                <div 
+                  key={movie.id} 
+                  className="group relative bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-3xl overflow-hidden border border-gray-700/50 hover:border-red-500/50 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/10"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.9))',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                  }}
+                >
                   {/* Movie Poster */}
-                  <div className="relative overflow-hidden">
+                  <div className="relative overflow-hidden h-96">
                     <img
                       src={movie.poster}
-                      alt={movie.title}
-                      className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-500"
+                      alt={`${movie.title} ${movie.subtitle || ''}`}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     
-                    {/* Remove from Wishlist */}
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    {/* Remove from Wishlist - Enhanced */}
                     <button
                       onClick={() => removeFromWishlist(movie.id)}
-                      className="absolute top-4 right-4 p-2 rounded-full bg-red-500 text-white hover:bg-red-600 transition-all duration-300"
+                      className="absolute top-4 right-4 p-3 rounded-full bg-red-500/90 backdrop-blur-sm text-white hover:bg-red-600 hover:scale-110 transition-all duration-300 shadow-lg"
                     >
                       <HeartSolid className="h-5 w-5" />
                     </button>
                     
-                    {/* Status Badge */}
-                    {movie.isNowShowing ? (
-                      <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        Now Showing
-                      </div>
-                    ) : (
-                      <div className="absolute top-4 left-4 bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-semibold">
-                        Coming Soon
-                      </div>
-                    )}
+                    {/* Now Showing Badge - Enhanced */}
+                    <div className="absolute top-4 left-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+                      Now Showing
+                    </div>
                     
-                    {/* Rating */}
-                    <div className="absolute bottom-4 left-4 flex items-center bg-black/60 rounded-full px-3 py-1">
-                      <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
-                      <span className="text-white text-sm font-semibold">{movie.rating}</span>
+                    {/* Rating Badge */}
+                    <div className="absolute bottom-4 left-4 flex items-center bg-black/70 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg">
+                      <StarIcon className="h-4 w-4 text-yellow-400 mr-2" />
+                      <span className="text-white font-bold">{movie.rating}</span>
+                    </div>
+                    
+                    {/* Tickets Left */}
+                    <div className="absolute bottom-4 right-4 bg-green-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
+                      {movie.ticketsLeft} left
                     </div>
                   </div>
                   
                   {/* Movie Info */}
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-white mb-2 line-clamp-1">{movie.title}</h3>
-                    <p className="text-gray-400 text-sm mb-3">{movie.genre}</p>
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-white mb-1 leading-tight">
+                        {movie.title}
+                        {movie.subtitle && (
+                          <span className="block text-lg text-gray-300 font-medium">{movie.subtitle}</span>
+                        )}
+                      </h3>
+                      <p className="text-red-400 text-sm font-semibold uppercase tracking-wider">{movie.genre}</p>
+                    </div>
                     
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                      <div className="flex items-center">
-                        <ClockIcon className="h-4 w-4 mr-1" />
+                    <div className="flex items-center justify-between text-sm text-gray-400">
+                      <div className="flex items-center space-x-1">
+                        <ClockIcon className="h-4 w-4" />
                         <span>{movie.duration} min</span>
                       </div>
-                      <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        <span>{new Date(movie.releaseDate).getFullYear()}</span>
+                      <div className="flex items-center space-x-1">
+                        <FilmIcon className="h-4 w-4" />
+                        <span>{movie.language}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-2xl font-bold text-red-500">₹{movie.price}</span>
-                      <span className="text-gray-400 text-sm">{movie.language}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-3xl font-bold bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
+                        ₹{movie.price}
+                      </span>
                     </div>
                     
-                    {/* Action Buttons */}
-                    {movie.isNowShowing ? (
+                    {/* Enhanced Action Buttons */}
+                    <div className="pt-2">
                       <button
                         onClick={() => handleBookNow(movie.id)}
-                        className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-semibold transition-colors duration-300 flex items-center justify-center"
+                        className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 rounded-2xl font-bold transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-red-500/25 transform hover:scale-[1.02]"
+                        style={{
+                          boxShadow: '0 10px 25px rgba(239, 68, 68, 0.2)'
+                        }}
                       >
-                        <FilmIcon className="h-5 w-5 mr-2" />
-                        Book Now
+                        <FilmIcon className="h-5 w-5" />
+                        <span>Book Now</span>
                       </button>
-                    ) : (
-                      <button
-                        disabled
-                        className="w-full bg-gray-600 text-gray-400 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center"
-                      >
-                        <CalendarIcon className="h-5 w-5 mr-2" />
-                        Coming Soon
-                      </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}

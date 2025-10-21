@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { BellIcon, HeartIcon } from '@heroicons/react/24/outline';
@@ -6,6 +6,7 @@ import { BellIcon, HeartIcon } from '@heroicons/react/24/outline';
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -17,6 +18,41 @@ const Navbar = () => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  const updateWishlistCount = () => {
+    try {
+      const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+      setWishlistCount(wishlist.length);
+    } catch (error) {
+      console.error('Error loading wishlist count:', error);
+      setWishlistCount(0);
+    }
+  };
+
+  useEffect(() => {
+    // Load initial wishlist count
+    updateWishlistCount();
+
+    // Listen for storage changes to update count in real-time
+    const handleStorageChange = (e) => {
+      if (e.key === 'wishlist') {
+        updateWishlistCount();
+      }
+    };
+
+    // Listen for custom storage events
+    const handleCustomStorageChange = () => {
+      updateWishlistCount();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('storage', handleCustomStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', handleCustomStorageChange);
+    };
+  }, []);
 
   return (
     <nav 
@@ -66,6 +102,11 @@ const Navbar = () => {
                   className="relative p-2 text-gray-300 hover:text-red-400 transition-colors duration-300 group"
                 >
                   <HeartIcon className="h-6 w-6" />
+                  {wishlistCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                      {wishlistCount}
+                    </span>
+                  )}
                   <span className="absolute inset-0 rounded-full bg-red-500/20 scale-0 group-hover:scale-100 transition-transform duration-300"></span>
                 </Link>
                 <div className="relative group">

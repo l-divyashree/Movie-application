@@ -118,4 +118,24 @@ public class SetupController {
             userRepository.save(user);
         }
     }
+
+    @PostMapping("/reset-admin")
+    public ResponseEntity<?> resetAdminPassword() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String adminEmail = "admin@moviebook.com";
+            userRepository.findByEmail(adminEmail).ifPresent(user -> {
+                user.setPassword(passwordEncoder.encode("password123"));
+                userRepository.save(user);
+                System.out.println("[SetupController] reset-admin: password reset for " + adminEmail);
+            });
+            response.put("success", true);
+            response.put("message", "Admin password reset to 'password123' for '" + adminEmail + "' if user existed.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }
