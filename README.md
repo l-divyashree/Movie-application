@@ -1,242 +1,144 @@
-# Movie Booking Application
+# 🎬 Movie Booking Application
 
-A production-ready movie booking web application similar to BookMyShow, built with React, Spring Boot, and MySQL.
+> A production-ready movie booking web application similar to BookMyShow, built with React, Spring Boot, and MySQL.
 
-## 🚀 Features
+![Application Overview](./screenshots/app-overview.png)
 
-### 🎬 Core Features
-- **Movie Catalog**: Browse movies with advanced filtering (genre, language, city)
-- **Show Management**: Multiple showtimes, venues, and cities support
-- **Seat Selection**: Interactive seat map with different categories (Regular, Premium, VIP)
-- **Booking Flow**: Complete reservation system with confirmation
-- **User Profiles**: Registration, login, booking history
-- **Admin Dashboard**: Complete CRUD operations for movies, shows, venues
+[![Build Status](https://github.com/l-divyashree/Movie-application/workflows/CI/CD/badge.svg)](https://github.com/l-divyashree/Movie-application/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18.2.0-blue)](https://reactjs.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green)](https://spring.io/projects/spring-boot)
 
-### 🏟️ Additional Content  
-- **Events**: Special movie screenings, premieres, film festivals
-- **Sports**: Live sports events, cricket matches, football games
-- **Multi-city**: Support for multiple cities and venues
+## 📸 Screenshots
 
-### 🔒 Security & Authentication
-- **JWT Authentication**: Secure token-based auth
-- **Role-based Access**: USER and ADMIN roles
-- **Password Encryption**: BCrypt hashing
-- **CORS Protection**: Configurable cross-origin settings
 
-### 💻 Technical Features
-- **Responsive Design**: Mobile-first with TailwindCSS
-- **Real-time Updates**: Live seat availability
-- **API Documentation**: Swagger/OpenAPI integration  
-- **Database Migrations**: Flyway schema versioning
-- **Containerized**: Full Docker support
-- **CI/CD Ready**: GitHub Actions workflow
-- **Production Ready**: Nginx, security headers, optimizations
+## 🗺️ Roadmap
 
-## 🏗️ Architecture
+# CinemaFlix — Movie Booking Application
 
-```
-├── backend/          # Spring Boot API (Java 17+)
-├── frontend/         # React + TailwindCSS
-├── database/         # MySQL scripts & migrations
-├── docker/           # Docker configurations
-└── .github/          # CI/CD workflows
-```
+This repository contains the CinemaFlix movie booking web application (React frontend + Spring Boot backend). Below are curated screenshots for the User Dashboard and Admin Dashboard, plus instructions to add the images into the repository so they appear in the README.
 
-## 🛠️ Tech Stack
-
-### Backend
-- **Java 17+** with **Spring Boot 3.x**
-- **Spring Security** with JWT authentication
-- **JPA/Hibernate** for data persistence
-- **MySQL** database
-- **Flyway** for database migrations
-- **Maven** for dependency management
-
-### Frontend
-- **React 18** with functional components
-- **TailwindCSS** for styling
-- **React Router** for navigation
-- **Axios** for API calls
-- **React Query** for state management
-
-### DevOps
-- **Docker & Docker Compose** for local development
-- **GitHub Actions** for CI/CD
-- **Nginx** for production deployment
-
-## 🚦 Quick Start
-
-### Prerequisites
-- Docker & Docker Compose
-- VS Code (recommended)
-- Git
-
-### One-Command Setup
-
-1. **Clone and start the application**
-   ```powershell
-   git clone <your-repo-url>
-   cd Movie-1
-   docker-compose up -d
-   ```
-
-2. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080/api
-   - Swagger UI: http://localhost:8080/swagger-ui.html
-   - MySQL: localhost:3306
-
-3. **Default Login Credentials**
-   - Admin: `admin` / `admin123`
-   - User: `john_doe` / `user123`
-
-### VS Code Development
-
-1. **Open in VS Code**
-   ```powershell
-   code .
-   ```
-
-2. **Use VS Code Tasks** (Ctrl+Shift+P → "Tasks: Run Task")
-   - Start Movie Booking Application (Full Stack)
-   - Build Backend (Maven)  
-   - Start Frontend (React Dev Server)
-   - Run Tests
-
-3. **Extensions Installed**
-   - Java Extension Pack
-   - Spring Boot Tools  
-   - React/JavaScript extensions
-   - Docker support
-   - MySQL client
-
-### Manual Setup (without Docker)
-
-See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed manual setup instructions.
-
-### Project Structure Overview
-
-```
-Movie-1/
-├── backend/              # Spring Boot API (Port 8080)
-│   ├── src/main/java/   # Java source code
-│   │   ├── entity/      # JPA entities
-│   │   ├── repository/  # Data repositories  
-│   │   ├── security/    # JWT authentication
-│   │   └── ...
-│   ├── Dockerfile       # Development container
-│   └── pom.xml         # Maven dependencies
-│
-├── frontend/            # React App (Port 3000)  
-│   ├── src/            # React source code
-│   │   ├── components/ # Reusable components
-│   │   ├── pages/      # Page components
-│   │   ├── contexts/   # React contexts
-│   │   └── ...
-│   ├── Dockerfile      # Development container
-│   └── package.json    # Node dependencies
-│
-├── database/           # MySQL setup
-│   ├── schema.sql     # Complete database schema
-│   └── init.sql       # Docker initialization
-│
-├── docker/            # Docker configurations
-├── .github/           # CI/CD workflows
-├── .vscode/           # VS Code tasks & settings
-├── docker-compose.yml # Development setup
-└── README.md          # This file
-```
-
-## 📊 Database Schema
-
-### Core Entities
-- `users` - User accounts and profiles
-- `roles` - User roles (USER, ADMIN)
-- `movies` - Movie information
-- `venues` - Theater venues
-- `shows` - Movie showtimes
-- `seats` - Seat configurations
-- `bookings` - User bookings
-- `events` - Special events
-- `sports` - Sports events
-- `cities` - Available cities
-
-## 🔑 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/refresh` - Token refresh
-
-### Movies
-- `GET /api/movies` - List movies with pagination/filtering
-- `GET /api/movies/{id}` - Get movie details
-- `POST /api/admin/movies` - Create movie (Admin)
-- `PUT /api/admin/movies/{id}` - Update movie (Admin)
-
-### Bookings
-- `POST /api/bookings/reserve` - Reserve seats
-- `POST /api/bookings/confirm` - Confirm booking
-- `DELETE /api/bookings/{id}` - Cancel booking
-
-## 🧪 Testing
-
-### Backend Tests
-```bash
-cd backend
-mvn test                    # Unit tests
-mvn verify                  # Integration tests
-```
-
-### Frontend Tests
-```bash
-cd frontend
-npm test                    # Jest unit tests
-npm run test:e2e           # Cypress E2E tests
-```
-
-## 🚀 Production Deployment
-
-### Docker Production Build
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Manual Production Setup
-1. Build frontend: `npm run build`
-2. Configure Nginx (see `docker/nginx/nginx.conf`)
-3. Deploy Spring Boot JAR with production profile
-4. Configure MySQL with proper security settings
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/new-feature`
-3. Commit changes: `git commit -am 'Add new feature'`
-4. Push to branch: `git push origin feature/new-feature`
-5. Submit pull request
-
-## 📝 Environment Variables
-
-### Backend (.env)
-```
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=moviebooking
-DB_USER=root
-DB_PASSWORD=password
-JWT_SECRET=your-secret-key
-```
-
-### Frontend (.env)
-```
-REACT_APP_API_URL=http://localhost:8080/api
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+If you already placed screenshots into the `./screenshots` folder, skip the copying step and simply commit.
 
 ---
 
-**Note**: Image placeholders are used throughout the application. Replace `posterUrl` and `imageUrl` fields with actual image URLs when deploying to production.
+## Screenshots
+
+### User Dashboard
+
+1. Overview / Hero
+
+![User - Overview](./screenshots/user-overview-1.png)
+
+2. Featured movies grid
+
+![User - Grid 1](./screenshots/user-grid-1.png)
+
+3. More movie cards
+
+![User - Grid 2](./screenshots/user-grid-2.png)
+
+4. Show selection / dates & shows
+
+![User - Show Selection](./screenshots/user-show-selection.png)
+
+5. Seat selection
+
+![User - Seats](./screenshots/user-seats.png)
+
+6. Payment summary
+
+![User - Payment](./screenshots/user-payment.png)
+
+---
+
+### Admin Dashboard
+
+1. Admin - Dashboard overview
+
+![Admin - Overview](./screenshots/admin-overview-1.png)
+
+2. Admin - Movies management
+
+![Admin - Movies](./screenshots/admin-movies-1.png)
+
+3. Admin - Shows management
+
+![Admin - Shows](./screenshots/admin-shows-1.png)
+
+4. Admin - Bookings list
+
+![Admin - Bookings](./screenshots/admin-bookings-1.png)
+
+5. Admin - Users list
+
+![Admin - Users](./screenshots/admin-users-1.png)
+
+6. Admin - Venues
+
+![Admin - Venues](./screenshots/admin-venues-1.png)
+
+7. Admin - Seats layout editor
+
+![Admin - Seats Editor](./screenshots/admin-seats-1.png)
+
+8. Admin - Analytics
+
+![Admin - Analytics](./screenshots/admin-analytics-1.png)
+
+---
+
+## How to add your screenshots (Windows / PowerShell)
+
+Run these commands in PowerShell (from the project root). They copy your screenshots into the repo `./screenshots` folder with friendly names used in this README.
+
+> Tip: open PowerShell as the same user that owns the Pictures files (usually your user account).
+
+```powershell
+# Create screenshots folder if it doesn't exist
+New-Item -ItemType Directory -Force -Path .\screenshots
+
+# --- User dashboard images ---
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105101.png" .\screenshots\user-overview-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105116.png" .\screenshots\user-grid-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105136.png" .\screenshots\user-grid-2.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105147.png" .\screenshots\user-show-selection.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105208.png" .\screenshots\user-seats.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105232.png" .\screenshots\user-payment.png
+
+# --- Admin dashboard images ---
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104805.png" .\screenshots\admin-overview-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104830.png" .\screenshots\admin-movies-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104843.png" .\screenshots\admin-shows-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104858.png" .\screenshots\admin-bookings-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104910.png" .\screenshots\admin-users-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104920.png" .\screenshots\admin-venues-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 104952.png" .\screenshots\admin-seats-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105031.png" .\screenshots\admin-analytics-1.png
+Copy-Item "C:\Users\P12C4F3\OneDrive - Dayforce HCM Inc\Pictures\Screenshots\Screenshot 2025-10-30 105043.png" .\screenshots\admin-more-1.png
+```
+
+After running the copy commands, add and commit the files with:
+
+```powershell
+git add screenshots/* README.md
+git commit -m "Add screenshot gallery and README update"
+git push origin main
+```
+
+---
+
+## Notes & tips
+
+- If an image is large, open it and save a compressed PNG or JPG to keep the repo size reasonable.
+- If Git complains about file size, consider using Git LFS or hosting large images externally and linking to them.
+- If you want me to embed specific captions or reorder images, tell me how you want them grouped and I will update `README.md`.
+
+---
+
+If you'd like, I can also provide:
+- A small script to batch-compress images (PowerShell + ImageMagick or a Node script),
+- An HTML gallery page inside the repo, or
+- Automated Git LFS setup commands.
+
+Run the PowerShell copy commands above and then push; tell me when it's done and I'll verify the README preview and suggest any layout tweaks.
